@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: "standalone",
+  // standalone jen pro Docker/NAS deploy, ne pro Vercel
+  // output: "standalone",
 };
 
 export default nextConfig;
