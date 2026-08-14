@@ -21,6 +21,7 @@ type UserRow = {
   lastName: string;
   role: string;
   status: string;
+  canCompare: boolean;
   createdAt: string;
   players: Player[];
 };
@@ -66,7 +67,9 @@ export default function AdminPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState<UserRow[]>([]);
-  const [userFilter, setUserFilter] = useState<"ALL" | "PENDING" | "APPROVED" | "REJECTED">("PENDING");
+  const [userFilter, setUserFilter] = useState<"ALL" | "PENDING" | "APPROVED" | "REJECTED" | "SUSPENDED">("PENDING");
+  const [filterTeam, setFilterTeam] = useState("ALL");
+  const [filterCategory, setFilterCategory] = useState("ALL");
   const [teams, setTeams] = useState<Team[]>([]);
   const [teamForm, setTeamForm] = useState({ name: "", shortName: "", primaryColor: "#1e3a5f", logoUrl: "" });
   const [seasons, setSeasons] = useState<Season[]>([]);
@@ -75,8 +78,8 @@ export default function AdminPage() {
   const [skipIds, setSkipIds] = useState<Set<string>>(new Set());
   const [promoteYear, setPromoteYear] = useState(new Date().getFullYear() + 1);
   const [promoteMsg, setPromoteMsg] = useState("");
-  const [filterCategory, setFilterCategory] = useState("ALL");
-  const [filterTeam, setFilterTeam] = useState("ALL");
+  const [promoteFilterCategory, setPromoteFilterCategory] = useState("ALL");
+  const [promoteFilterTeam, setPromoteFilterTeam] = useState("ALL");
 
   useEffect(() => {
     if (authStatus === "unauthenticated") { router.push("/login"); return; }
@@ -114,15 +117,38 @@ export default function AdminPage() {
 
   useEffect(() => { if (tab === "promote") loadPromote(); }, [tab]);
 
-  async function updateUser(userId: string, payload: { status?: string; role?: string }) {
-    const res = await fetch("/api/admin/users", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId, ...payload }) });
-    if (!res.ok) { setError("Úprava uživatele selhala"); return; }
+  async function updateUser(userId: string, payload: { status?: string; role?: string; canCompare?: boolean }) {
+    setError("");
+    const res = await fetch("/api/admin/users", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId, ...payload }),
+    });
+    const data = await res.json();
+    if (!res.ok) { setError(data.error || "Úprava selhala"); return; }
+    await loadAll();
+  }
+
+  async function deleteUser(userId: string, name: string) {
+    if (!confirm(`Opravdu trvale smazat uživatele ${name}? Smažou se i děti a všechna data.`)) return;
+    setError("");
+    const res = await fetch("/api/admin/users", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId }),
+    });
+    const data = await res.json();
+    if (!res.ok) { setError(data.error || "Smazání selhalo"); return; }
     await loadAll();
   }
 
   async function createTeam(e: React.FormEvent) {
     e.preventDefault(); setError("");
-    const res = await fetch("/api/admin/teams", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: teamForm.name, shortName: teamForm.shortName, primaryColor: teamForm.primaryColor, logoUrl: teamForm.logoUrl || null }) });
+    const res = await fetch("/api/admin/teams", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: teamForm.name, shortName: teamForm.shortName, primaryColor: teamForm.primaryColor, logoUrl: teamForm.logoUrl || null }),
+    });
     const data = await res.json();
     if (!res.ok) { setError(data.error || "Vytvoření týmu selhalo"); return; }
     setTeamForm({ name: "", shortName: "", primaryColor: "#1e3a5f", logoUrl: "" });
@@ -134,7 +160,11 @@ export default function AdminPage() {
     try {
       const dataUrl = await fileToDataUrl(file);
       if (teamId) {
-        const res = await fetch("/api/admin/teams", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: teamId, logoUrl: dataUrl }) });
+        const res = await fetch("/api/admin/teams", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: teamId, logoUrl: dataUrl }),
+        });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Upload selhal");
         await loadAll();
@@ -145,31 +175,43 @@ export default function AdminPage() {
   }
 
   async function toggleTeam(id: string, isActive: boolean) {
-    await fetch("/api/admin/teams", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, isActive: !isActive }) });
+    await fetch("/api/admin/teams", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, isActive: !isActive }),
+    });
     await loadAll();
   }
 
   async function createSeason(e: React.FormEvent) {
     e.preventDefault(); setError("");
-    const res = await fetch("/api/admin/seasons", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ year: seasonYear, setActive: true }) });
+    const res = await fetch("/api/admin/seasons", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ year: seasonYear, setActive: true }),
+    });
     const data = await res.json();
     if (!res.ok) { setError(data.error || "Vytvoření sezóny selhalo"); return; }
     await loadAll();
   }
 
   async function setSeasonActive(id: string) {
-    await fetch("/api/admin/seasons", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, isActive: true }) });
+    await fetch("/api/admin/seasons", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, isActive: true }),
+    });
     await loadAll();
   }
 
   const filteredPromote = useMemo(() => promoteList.filter((p) => {
-    if (filterCategory !== "ALL" && p.category !== filterCategory) return false;
-    if (filterTeam !== "ALL") {
+    if (promoteFilterCategory !== "ALL" && p.category !== promoteFilterCategory) return false;
+    if (promoteFilterTeam !== "ALL") {
       const ids = (p.teams || []).map((t) => t.id);
-      if (!ids.includes(filterTeam)) return false;
+      if (!ids.includes(promoteFilterTeam)) return false;
     }
     return true;
-  }), [promoteList, filterCategory, filterTeam]);
+  }), [promoteList, promoteFilterCategory, promoteFilterTeam]);
 
   async function runPromote() {
     setError(""); setPromoteMsg("");
@@ -178,7 +220,11 @@ export default function AdminPage() {
       newCategory: p.suggestedCategory || p.category || "U8",
       skip: skipIds.has(p.id) || !p.suggestedCategory || p.suggestedCategory === p.category,
     }));
-    const res = await fetch("/api/admin/season-promote", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ year: promoteYear, seasonName: `Sezóna ${promoteYear}`, promotions }) });
+    const res = await fetch("/api/admin/season-promote", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ year: promoteYear, seasonName: `Sezóna ${promoteYear}`, promotions }),
+    });
     const data = await res.json();
     if (!res.ok) { setError(data.error || "Postup selhal"); return; }
     setPromoteMsg(data.message);
@@ -196,7 +242,20 @@ export default function AdminPage() {
     return Array.from(names).join(", ") || "—";
   }
 
-  const filteredUsers = users.filter((u) => (userFilter === "ALL" ? true : u.status === userFilter));
+  function userMatchesFilters(u: UserRow): boolean {
+    if (userFilter !== "ALL" && u.status !== userFilter) return false;
+    if (filterTeam !== "ALL") {
+      const has = u.players.some((p) => (p.teams || []).some((t) => t.team.id === filterTeam));
+      if (!has) return false;
+    }
+    if (filterCategory !== "ALL") {
+      const has = u.players.some((p) => p.category === filterCategory);
+      if (!has) return false;
+    }
+    return true;
+  }
+
+  const filteredUsers = users.filter(userMatchesFilters);
 
   if (authStatus === "loading" || loading) {
     return <main className="flex min-h-screen items-center justify-center bg-[#0a1628] text-white/60">Načítám…</main>;
@@ -234,31 +293,51 @@ export default function AdminPage() {
 
         {tab === "users" && (
           <>
-            <div className="mb-4 flex flex-wrap gap-2">
-              {(["PENDING", "APPROVED", "REJECTED", "ALL"] as const).map((f) => (
+            <div className="mb-3 flex flex-wrap gap-2">
+              {(["PENDING", "APPROVED", "SUSPENDED", "REJECTED", "ALL"] as const).map((f) => (
                 <button key={f} onClick={() => setUserFilter(f)} className={`rounded-full px-3 py-1 text-xs font-medium ${userFilter === f ? "bg-white/20 text-white" : "bg-white/5 text-white/50"}`}>
                   {f === "PENDING" && `Čekající (${users.filter((u) => u.status === "PENDING").length})`}
-                  {f === "APPROVED" && "Schválení"}
+                  {f === "APPROVED" && "Aktivní"}
+                  {f === "SUSPENDED" && "Pozastavení"}
                   {f === "REJECTED" && "Zamítnutí"}
                   {f === "ALL" && "Všichni"}
                 </button>
               ))}
             </div>
+            <div className="mb-4 flex flex-wrap gap-2">
+              <select value={filterTeam} onChange={(e) => setFilterTeam(e.target.value)} className="rounded-xl border border-white/15 bg-white/5 px-3 py-1.5 text-xs text-white outline-none">
+                <option value="ALL" className="bg-[#0a1628]">Všechny týmy</option>
+                {teams.map((t) => <option key={t.id} value={t.id} className="bg-[#0a1628]">{t.name}</option>)}
+              </select>
+              <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)} className="rounded-xl border border-white/15 bg-white/5 px-3 py-1.5 text-xs text-white outline-none">
+                <option value="ALL" className="bg-[#0a1628]">Všechny kategorie</option>
+                {CATEGORIES.map((c) => <option key={c} value={c} className="bg-[#0a1628]">{c}</option>)}
+              </select>
+            </div>
+
             <div className="space-y-3">
               {filteredUsers.length === 0 && <p className="py-10 text-center text-white/40">Žádní uživatelé</p>}
               {filteredUsers.map((user) => (
                 <div key={user.id} className="rounded-2xl border border-white/10 bg-white/5 p-4">
                   <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
+                    <div className="min-w-0 flex-1">
                       <p className="font-semibold">{user.firstName} {user.lastName}</p>
                       <p className="text-sm text-white/50">{user.email}</p>
                       <div className="mt-1 flex flex-wrap gap-2 text-xs">
                         <span className="rounded-full bg-white/10 px-2 py-0.5">{user.role}</span>
-                        <span className={`rounded-full px-2 py-0.5 ${user.status === "PENDING" ? "bg-amber-500/20 text-amber-300" : user.status === "APPROVED" ? "bg-green-500/20 text-green-300" : "bg-red-500/20 text-red-300"}`}>{user.status}</span>
+                        <span className={`rounded-full px-2 py-0.5 ${
+                          user.status === "PENDING" ? "bg-amber-500/20 text-amber-300"
+                          : user.status === "APPROVED" ? "bg-green-500/20 text-green-300"
+                          : user.status === "SUSPENDED" ? "bg-orange-500/20 text-orange-300"
+                          : "bg-red-500/20 text-red-300"
+                        }`}>{user.status}</span>
                         <span className="rounded-full bg-sky-500/15 px-2 py-0.5 text-sky-200">{clubsOf(user)}</span>
+                        {user.canCompare && <span className="rounded-full bg-purple-500/20 px-2 py-0.5 text-purple-200">detail. stats</span>}
                       </div>
                       {user.players.length > 0 && (
-                        <p className="mt-2 text-sm text-white/60">Dítě: {user.players.map((p) => `${p.firstName} ${p.lastName}${p.category ? ` (${p.category})` : ""}`).join(", ")}</p>
+                        <p className="mt-2 text-sm text-white/60">
+                          Dítě: {user.players.map((p) => `${p.firstName} ${p.lastName}${p.category ? ` (${p.category})` : ""}`).join(", ")}
+                        </p>
                       )}
                     </div>
                     <div className="flex flex-wrap gap-2">
@@ -268,11 +347,33 @@ export default function AdminPage() {
                           <button onClick={() => updateUser(user.id, { status: "REJECTED" })} className="rounded-lg bg-red-600/80 px-3 py-1.5 text-sm font-medium">Zamítnout</button>
                         </>
                       )}
-                      {user.status === "APPROVED" && user.role === "PARENT" && (
-                        <button onClick={() => updateUser(user.id, { role: "ORGANIZER" })} className="rounded-lg border border-white/20 px-3 py-1.5 text-sm">→ Organizátor</button>
+                      {user.status === "APPROVED" && user.role !== "ADMIN" && (
+                        <>
+                          {user.role === "PARENT" && (
+                            <button onClick={() => updateUser(user.id, { role: "ORGANIZER" })} className="rounded-lg border border-white/20 px-3 py-1.5 text-sm">→ Organizátor</button>
+                          )}
+                          {user.role === "ORGANIZER" && (
+                            <button onClick={() => updateUser(user.id, { role: "PARENT" })} className="rounded-lg border border-white/20 px-3 py-1.5 text-sm">→ Rodič</button>
+                          )}
+                          <button
+                            onClick={() => updateUser(user.id, { canCompare: !user.canCompare })}
+                            className={`rounded-lg border px-3 py-1.5 text-sm ${user.canCompare ? "border-purple-400/40 text-purple-200" : "border-white/20"}`}
+                          >
+                            {user.canCompare ? "Stats: ANO" : "Stats: ne"}
+                          </button>
+                          <button onClick={() => updateUser(user.id, { status: "SUSPENDED" })} className="rounded-lg border border-orange-400/40 px-3 py-1.5 text-sm text-orange-200">Pozastavit</button>
+                        </>
                       )}
-                      {user.status === "APPROVED" && user.role === "ORGANIZER" && (
-                        <button onClick={() => updateUser(user.id, { role: "PARENT" })} className="rounded-lg border border-white/20 px-3 py-1.5 text-sm">→ Rodič</button>
+                      {user.status === "SUSPENDED" && (
+                        <button onClick={() => updateUser(user.id, { status: "APPROVED" })} className="rounded-lg bg-green-600 px-3 py-1.5 text-sm font-medium">Obnovit</button>
+                      )}
+                      {user.role !== "ADMIN" && (
+                        <button
+                          onClick={() => deleteUser(user.id, `${user.firstName} ${user.lastName}`)}
+                          className="rounded-lg border border-red-500/40 px-3 py-1.5 text-sm text-red-300"
+                        >
+                          Smazat
+                        </button>
                       )}
                     </div>
                   </div>
@@ -354,11 +455,11 @@ export default function AdminPage() {
                 <label className="text-sm text-white/60">Rok</label>
                 <input type="number" value={promoteYear} onChange={(e) => setPromoteYear(parseInt(e.target.value) || 2027)} className="w-24 rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-white outline-none" />
               </div>
-              <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)} className="rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-sm text-white outline-none">
+              <select value={promoteFilterCategory} onChange={(e) => setPromoteFilterCategory(e.target.value)} className="rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-sm text-white outline-none">
                 <option value="ALL" className="bg-[#0a1628]">Všechny kategorie</option>
                 {CATEGORIES.map((c) => <option key={c} value={c} className="bg-[#0a1628]">{c}</option>)}
               </select>
-              <select value={filterTeam} onChange={(e) => setFilterTeam(e.target.value)} className="rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-sm text-white outline-none">
+              <select value={promoteFilterTeam} onChange={(e) => setPromoteFilterTeam(e.target.value)} className="rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-sm text-white outline-none">
                 <option value="ALL" className="bg-[#0a1628]">Všechny týmy</option>
                 {teams.map((t) => <option key={t.id} value={t.id} className="bg-[#0a1628]">{t.name}</option>)}
               </select>
