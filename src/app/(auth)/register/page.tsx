@@ -3,6 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 
+const CATEGORIES = ["U8", "U9", "U10", "U11", "U12", "U13", "U15", "U18"];
+
 function DiamondLogo({ size = 64 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 120 120" fill="none" aria-hidden>
@@ -23,7 +25,7 @@ export default function RegisterPage() {
     password: "",
     childFirstName: "",
     childLastName: "",
-    birthYear: "",
+    category: "",
   });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
@@ -36,14 +38,25 @@ export default function RegisterPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+
+    if (!form.category) {
+      setError("Vyberte kategorii dítěte");
+      return;
+    }
+
     setLoading(true);
     try {
       const res = await fetch("/api/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...form,
-          birthYear: form.birthYear ? parseInt(form.birthYear) : undefined,
+          firstName: form.firstName,
+          lastName: form.lastName,
+          email: form.email,
+          password: form.password,
+          childFirstName: form.childFirstName,
+          childLastName: form.childLastName,
+          category: form.category,
           teamIds: ["placeholder"],
         }),
       });
@@ -96,7 +109,9 @@ export default function RegisterPage() {
       <div className="relative z-10 w-full max-w-sm">
         <div className="mb-6 flex flex-col items-center">
           <DiamondLogo size={64} />
-          <h1 className="mt-3 text-xl font-black text-white">DIAMOND <span className="text-red-600">YOUTH</span></h1>
+          <h1 className="mt-3 text-xl font-black text-white">
+            DIAMOND <span className="text-red-600">YOUTH</span>
+          </h1>
           <p className="mt-1 text-sm text-white/50">Registrace</p>
         </div>
 
@@ -167,15 +182,21 @@ export default function RegisterPage() {
             </div>
           </div>
 
-          <input
-            type="number"
-            value={form.birthYear}
-            onChange={(e) => update("birthYear", e.target.value)}
-            min={2010}
-            max={2022}
-            placeholder="Rok narození (např. 2016)"
-            className={inputClass}
-          />
+          <select
+            value={form.category}
+            onChange={(e) => update("category", e.target.value)}
+            required
+            className={`${inputClass} appearance-none`}
+          >
+            <option value="" disabled className="bg-[#0a1628] text-white/50">
+              Kategorie (U8–U18)
+            </option>
+            {CATEGORIES.map((cat) => (
+              <option key={cat} value={cat} className="bg-[#0a1628] text-white">
+                {cat}
+              </option>
+            ))}
+          </select>
 
           <button
             type="submit"

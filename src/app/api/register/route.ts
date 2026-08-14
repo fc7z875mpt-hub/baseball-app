@@ -4,18 +4,20 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 
 const registerSchema = z.object({
-  firstName: z.string().min(2, "Jmeno musi mit alespon 2 znaky"),
-  lastName: z.string().min(2, "Prijmeni musi mit alespon 2 znaky"),
-  email: z.string().email("Neplatny e-mail"),
+  firstName: z.string().min(2, "Jméno musí mít alespoň 2 znaky"),
+  lastName: z.string().min(2, "Příjmení musí mít alespoň 2 znaky"),
+  email: z.string().email("Neplatný e-mail"),
   password: z
     .string()
-    .min(8, "Heslo musi mit alespon 8 znaku")
-    .regex(/[A-Z]/, "Heslo musi obsahovat velke pismeno")
-    .regex(/[0-9]/, "Heslo musi obsahovat cislo"),
-  childFirstName: z.string().min(2, "Jmeno ditete musi mit alespon 2 znaky"),
-  childLastName: z.string().min(2, "Prijmeni ditete musi mit alespon 2 znaky"),
-  teamIds: z.array(z.string()).min(1, "Vyberte alespon jeden tym"),
-  birthYear: z.number().optional(),
+    .min(8, "Heslo musí mít alespoň 8 znaků")
+    .regex(/[A-Z]/, "Heslo musí obsahovat velké písmeno")
+    .regex(/[0-9]/, "Heslo musí obsahovat číslo"),
+  childFirstName: z.string().min(2, "Jméno dítěte musí mít alespoň 2 znaky"),
+  childLastName: z.string().min(2, "Příjmení dítěte musí mít alespoň 2 znaky"),
+  category: z.enum(["U8", "U9", "U10", "U11", "U12", "U13", "U15", "U18"], {
+    errorMap: () => ({ message: "Vyberte platnou kategorii" }),
+  }),
+  teamIds: z.array(z.string()).min(1, "Vyberte alespoň jeden tým"),
 });
 
 export async function POST(req: NextRequest) {
@@ -29,13 +31,14 @@ export async function POST(req: NextRequest) {
 
     if (existing) {
       return NextResponse.json(
-        { error: "Uzivatel s timto e-mailem jiz existuje" },
+        { error: "Uživatel s tímto e-mailem již existuje" },
         { status: 400 }
       );
     }
 
     const passwordHash = await bcrypt.hash(data.password, 12);
 
+    // Zatím bez vazby na tým (placeholder) – týmy založí admin
     const user = await prisma.user.create({
       data: {
         email: data.email.toLowerCase(),
@@ -48,12 +51,7 @@ export async function POST(req: NextRequest) {
           create: {
             firstName: data.childFirstName,
             lastName: data.childLastName,
-            birthYear: data.birthYear,
-            teams: {
-              create: data.teamIds.map((teamId) => ({
-                teamId,
-              })),
-            },
+            category: data.category,
           },
         },
       },
@@ -68,7 +66,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(
       {
-        message: "Registrace uspesna. Ucet ceka na schvaleni administratorem.",
+        message: "Registrace úspěšná. Účet čeká na schválení administrátorem.",
         user,
       },
       { status: 201 }
@@ -82,7 +80,7 @@ export async function POST(req: NextRequest) {
     }
     console.error("Registration error:", error);
     return NextResponse.json(
-      { error: "Neco se pokazilo. Zkuste to prosim znovu." },
+      { error: "Něco se pokazilo. Zkuste to prosím znovu." },
       { status: 500 }
     );
   }
