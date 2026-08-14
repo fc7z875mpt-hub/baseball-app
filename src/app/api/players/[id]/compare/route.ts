@@ -5,8 +5,10 @@ import { prisma } from "@/lib/prisma";
 import { aggregateStats } from "@/lib/stats";
 
 /**
- * Porovnání hráče s průměrem a nejlepším z týmu / kategorie.
- * Přístupné jen s canCompare (admin udělí) nebo ORGANIZER/ADMIN.
+ * Porovnání hráče:
+ *  scope=team     → vlastní tým (průměr + nejlepší)
+ *  scope=allstar  → všichni v kategorii/ročníku napříč týmy
+ *  scope=other    → konkrétní tým (?teamId=)
  */
 export async function GET(
   req: NextRequest,
@@ -25,14 +27,15 @@ export async function GET(
       role === "ADMIN";
 
     if (!canCompare) {
-      return NextResponse.json(
-        { error: "Porovnání není povoleno" },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: "Porovnání není povoleno" }, { status: 403 });
     }
 
     const { id } = await ctx.params;
-    const scope = req.nextUrl.searchParams.get("scope") || "team"; // team | category
+    const scopeParam = req.nextUrl.searchParams.get("scope") || "team";
+    // zpětná kompatibilita: category → allstar
+    const scope =
+      scopeParam === "category" ? "allstar" : (scopeParam as "team" | "allstar" | "other");
+    const otherTeamId = req.nextUrl.searchParams.get("teamId");
 
     const player = await prisma.player.findUnique({
       where: { id },
@@ -50,24 +53,98 @@ export async function GET(
     }
 
     const myStats = aggregateStats(player.stats);
-    const teamId = player.teams[0]?.teamId;
+    const ownTeamId = player.teams[0]?.teamId || null;
+    const ownTeamName = player.teams[0]?.team.name || null;
     const category = player.category;
 
-    // Najít peer hráče
+    // Seznam týmů pro picker (jiný tým)
+    const allTeams = await prisma.team.findMany({
+      where: { isActive: true },
+      orderBy: { name: "asc" },
+      select: { id: true, name: true, shortName: true },
+    });
+
+    let whereClause: Record<string, unknown> = { id: { not: id } };
+    let scopeLabel = "Tým";
+    let compareTeamName: string | null = ownTeamName;
+
+    if (scope === "team") {
+      if (!ownTeamId) {
+        return NextResponse.json({
+          scope: "team",
+          scopeLabel: "Vlastní tým",
+          me: statsPayload(myStats),
+          average: emptyAgg(),
+          best: null,
+          peerCount: 0,
+          teams: allTeams,
+          ownTeamId,
+          compareTeamName: ownTeamName,
+        });
+      }
+      whereClause = {
+        id: { not: id },
+        teams: { some: { teamId: ownTeamId, isActive: true } },
+      };
+      scopeLabel = "Vlastní tým";
+      compareTeamName = ownTeamName;
+    } else if (scope === "allstar") {
+      if (!category) {
+        return NextResponse.json({
+          scope: "allstar",
+          scopeLabel: "All-star (ročník)",
+          me: statsPayload(myStats),
+          average: emptyAgg(),
+          best: null,
+          peerCount: 0,
+          teams: allTeams,
+          ownTeamId,
+          compareTeamName: category || null,
+          error: "Hráč nemá nastavenou kategorii",
+        });
+      }
+      whereClause = {
+        id: { not: id },
+        category,
+      };
+      scopeLabel = `All-star · ${category}`;
+      compareTeamName = category;
+    } else if (scope === "other") {
+      if (!otherTeamId) {
+        return NextResponse.json({
+          scope: "other",
+          scopeLabel: "Jiný tým",
+          me: statsPayload(myStats),
+          average: emptyAgg(),
+          best: null,
+          peerCount: 0,
+          teams: allTeams.filter((t) => t.id !== ownTeamId),
+          ownTeamId,
+          compareTeamName: null,
+          needsTeamId: true,
+        });
+      }
+      const target = allTeams.find((t) => t.id === otherTeamId);
+      whereClause = {
+        id: { not: id },
+        teams: { some: { teamId: otherTeamId, isActive: true } },
+      };
+      // pokud je vybraný tým a hráč má kategorii, omez i na stejný ročník
+      if (category) {
+        whereClause = {
+          ...whereClause,
+          category,
+        };
+      }
+      scopeLabel = target ? target.name : "Jiný tým";
+      compareTeamName = target?.name || null;
+    }
+
     let peers = await prisma.player.findMany({
-      where:
-        scope === "category" && category
-          ? { category, id: { not: id } }
-          : teamId
-            ? {
-                id: { not: id },
-                teams: { some: { teamId, isActive: true } },
-              }
-            : { id: { not: id } },
+      where: whereClause,
       include: { stats: true },
     });
 
-    // Omezit na hráče se statistikami
     peers = peers.filter((p) => p.stats.length > 0);
 
     const peerAggs = peers.map((p) => ({
@@ -76,21 +153,20 @@ export async function GET(
       stats: aggregateStats(p.stats),
     }));
 
-    // Průměr týmu/kategorie
-    const n = peerAggs.length || 1;
-    const avg = {
-      hits: Math.round(peerAggs.reduce((s, p) => s + p.stats.hits, 0) / n),
-      runs: Math.round(peerAggs.reduce((s, p) => s + p.stats.runs, 0) / n),
-      homeRuns: Math.round(
-        peerAggs.reduce((s, p) => s + p.stats.homeRuns, 0) / n
-      ),
-      games: Math.round(peerAggs.reduce((s, p) => s + p.stats.games, 0) / n),
-      avg:
-        peerAggs.reduce((s, p) => s + (p.stats.avg ?? 0), 0) /
-        (peerAggs.filter((p) => p.stats.avg != null).length || 1),
-    };
+    const n = peerAggs.length;
+    const average =
+      n === 0
+        ? emptyAgg()
+        : {
+            hits: Math.round(peerAggs.reduce((s, p) => s + p.stats.hits, 0) / n),
+            runs: Math.round(peerAggs.reduce((s, p) => s + p.stats.runs, 0) / n),
+            homeRuns: Math.round(peerAggs.reduce((s, p) => s + p.stats.homeRuns, 0) / n),
+            games: Math.round(peerAggs.reduce((s, p) => s + p.stats.games, 0) / n),
+            avg:
+              peerAggs.reduce((s, p) => s + (p.stats.avg ?? 0), 0) /
+              (peerAggs.filter((p) => p.stats.avg != null).length || 1),
+          };
 
-    // Nejlepší podle hitů
     const best =
       peerAggs.length > 0
         ? peerAggs.reduce((a, b) => (b.stats.hits > a.stats.hits ? b : a))
@@ -98,14 +174,11 @@ export async function GET(
 
     return NextResponse.json({
       scope,
-      me: {
-        hits: myStats.hits,
-        runs: myStats.runs,
-        homeRuns: myStats.homeRuns,
-        games: myStats.games,
-        avg: myStats.avg,
-      },
-      teamAverage: avg,
+      scopeLabel,
+      me: statsPayload(myStats),
+      average,
+      // zpětná kompatibilita se starým UI
+      teamAverage: average,
       best: best
         ? {
             name: best.name,
@@ -117,9 +190,34 @@ export async function GET(
           }
         : null,
       peerCount: peerAggs.length,
+      teams: allTeams.filter((t) => t.id !== ownTeamId),
+      ownTeamId,
+      compareTeamName,
+      category,
+      otherTeamId: otherTeamId || null,
     });
   } catch (error) {
     console.error("compare:", error);
     return NextResponse.json({ error: "Chyba serveru" }, { status: 500 });
   }
+}
+
+function statsPayload(s: {
+  hits: number;
+  runs: number;
+  homeRuns: number;
+  games: number;
+  avg: number | null;
+}) {
+  return {
+    hits: s.hits,
+    runs: s.runs,
+    homeRuns: s.homeRuns,
+    games: s.games,
+    avg: s.avg,
+  };
+}
+
+function emptyAgg() {
+  return { hits: 0, runs: 0, homeRuns: 0, games: 0, avg: 0 };
 }
