@@ -206,11 +206,21 @@ export default function PlayerProfilePage() {
           </div>
         )}
 
-        {trendPoints.length > 0 && (
-          <TrendChart points={trendPoints} title="Výkon v posledních zápasech" />
+        {canCompare && stats.games > 0 ? (
+          <ComparePanel
+            playerId={id}
+            recentGames={recent.map((g) => ({
+              hits: g.hits,
+              atBats: g.atBats,
+              runs: g.runs,
+              homeRuns: g.homeRuns,
+            }))}
+          />
+        ) : (
+          trendPoints.length > 0 && (
+            <TrendChart points={trendPoints} title="Výkon v posledních zápasech" />
+          )
         )}
-
-        {canCompare && stats.games > 0 && <ComparePanel playerId={id} />}
 
         {recent.length > 0 && (
           <div>
