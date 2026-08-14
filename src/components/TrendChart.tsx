@@ -19,7 +19,6 @@ export function TrendChart({
 }: {
   points?: TrendPoint[];
   title?: string;
-  /** Volitelné další křivky (porovnání) – stejný počet bodů jako points */
   series?: CompareSeries[];
 }) {
   const base =
@@ -31,14 +30,14 @@ export function TrendChart({
 
   if (!base.length) {
     return (
-      <div className="rounded-2xl border border-white/10 bg-[#0d1b2e] p-4 text-sm text-white/40">
+      <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-sm text-white/40">
         Zatím žádné zápasy pro graf
       </div>
     );
   }
 
   const allSeries: CompareSeries[] = [
-    { label: "Výkon", color: "#38bdf8", values: base },
+    { label: "Výkon", color: "#ef4444", values: base },
     ...(series || []),
   ];
 
@@ -66,13 +65,12 @@ export function TrendChart({
     return { line, coords };
   }
 
-  const primary = pathFor(base);
   const first = base[0] ?? 0;
   const last = base[base.length - 1] ?? 0;
   const trend = last - first;
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-[#0d1b2e] p-4">
+    <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
       <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-white/50">
         {title}
       </p>
@@ -94,7 +92,7 @@ export function TrendChart({
             <g key={s.label}>
               <path d={line} fill="none" stroke={s.color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
               {coords.map((c, i) => (
-                <circle key={i} cx={c.x} cy={c.y} r="3.5" fill="#0d1b2e" stroke={s.color} strokeWidth="2" />
+                <circle key={i} cx={c.x} cy={c.y} r="3.5" fill="#0a1628" stroke={s.color} strokeWidth="2" />
               ))}
             </g>
           );

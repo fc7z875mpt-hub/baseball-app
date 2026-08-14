@@ -100,7 +100,7 @@ export function BottomNav({
               key={item.href + item.label}
               href={item.href}
               className={`flex min-w-0 flex-1 flex-col items-center gap-1 py-2.5 text-[10px] font-medium transition ${
-                active ? "text-sky-400" : "text-white/40 hover:text-white/65"
+                active ? "text-red-500" : "text-white/40 hover:text-white/65"
               }`}
             >
               <span>{item.icon()}</span>
