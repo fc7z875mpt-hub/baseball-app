@@ -59,19 +59,15 @@ export default function AdminPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
 
-  // Users
   const [users, setUsers] = useState<UserRow[]>([]);
   const [userFilter, setUserFilter] = useState<"ALL" | "PENDING" | "APPROVED" | "REJECTED">("PENDING");
 
-  // Teams
   const [teams, setTeams] = useState<Team[]>([]);
   const [teamForm, setTeamForm] = useState({ name: "", shortName: "", primaryColor: "#1e3a5f" });
 
-  // Seasons
   const [seasons, setSeasons] = useState<Season[]>([]);
   const [seasonYear, setSeasonYear] = useState(new Date().getFullYear());
 
-  // Promote
   const [promoteList, setPromoteList] = useState<PromotePlayer[]>([]);
   const [skipIds, setSkipIds] = useState<Set<string>>(new Set());
   const [promoteYear, setPromoteYear] = useState(new Date().getFullYear() + 1);
@@ -271,7 +267,6 @@ export default function AdminPage() {
           </div>
         </div>
 
-        {/* Tabs */}
         <div className="mb-6 flex flex-wrap gap-2">
           {tabs.map((t) => (
             <button
@@ -293,7 +288,6 @@ export default function AdminPage() {
           <div className="mb-4 rounded-xl bg-green-500/10 px-4 py-3 text-sm text-green-400">{promoteMsg}</div>
         )}
 
-        {/* USERS */}
         {tab === "users" && (
           <>
             <div className="mb-4 flex flex-wrap gap-2">
@@ -391,7 +385,6 @@ export default function AdminPage() {
           </>
         )}
 
-        {/* TEAMS */}
         {tab === "teams" && (
           <>
             <form onSubmit={createTeam} className="mb-6 space-y-3 rounded-2xl border border-white/10 bg-white/5 p-4">
@@ -462,7 +455,6 @@ export default function AdminPage() {
           </>
         )}
 
-        {/* SEASONS */}
         {tab === "seasons" && (
           <>
             <form onSubmit={createSeason} className="mb-6 flex gap-3 rounded-2xl border border-white/10 bg-white/5 p-4">
@@ -516,7 +508,6 @@ export default function AdminPage() {
           </>
         )}
 
-        {/* PROMOTE */}
         {tab === "promote" && (
           <>
             <div className="mb-4 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 text-sm text-amber-100/80">
@@ -541,7 +532,7 @@ export default function AdminPage() {
               {promoteList.map((p) => {
                 const willPromote =
                   !skipIds.has(p.id) &&
-                  p.suggestedCategory &&
+                  !!p.suggestedCategory &&
                   p.suggestedCategory !== p.category;
                 return (
                   <label
