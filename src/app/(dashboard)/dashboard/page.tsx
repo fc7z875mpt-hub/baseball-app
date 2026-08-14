@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { TrendChart } from "@/components/TrendChart";
+import { IconBat, IconRunner, IconHomeRun, IconGames } from "@/components/Icons";
 
 type PlayerCard = {
   id: string;
@@ -141,7 +142,7 @@ export default function DashboardPage() {
     <main className="px-4 pt-5">
       <div className="mx-auto max-w-lg space-y-5">
         <header className="flex items-center justify-between">
-          <div className="flex items-center gap-3 min-w-0">
+          <div className="flex min-w-0 items-center gap-3">
             <TeamBadge name={team?.name || "Tým"} color={team?.primaryColor || "#1e40af"} logoUrl={team?.logoUrl} size={44} />
             <div className="min-w-0">
               <p className="truncate text-sm font-bold leading-tight">{team?.name || "Můj tým"}</p>
@@ -182,38 +183,10 @@ export default function DashboardPage() {
               Statistiky sezóny
             </h2>
             <div className="grid grid-cols-4 gap-2">
-              <StatTile
-                label="Hity"
-                value={child.stats.hits}
-                color="text-sky-400"
-                icon={
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m14 4 6 6-8 8-6-6Z" /><path d="m4 14 6 6" /></svg>
-                }
-              />
-              <StatTile
-                label="Doběhy"
-                value={child.stats.runs}
-                color="text-emerald-400"
-                icon={
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="5" r="2" /><path d="M12 7v5l3 3" /><path d="m9 15 3 6 3-6" /></svg>
-                }
-              />
-              <StatTile
-                label="HR"
-                value={child.stats.homeRuns}
-                color="text-red-400"
-                icon={
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="9" /><path d="M12 3c2 3 2 6 0 9s-2 6 0 9" /><path d="M3 12h18" /></svg>
-                }
-              />
-              <StatTile
-                label="Zápasy"
-                value={child.stats.games}
-                color="text-amber-400"
-                icon={
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></svg>
-                }
-              />
+              <StatTile label="Hity" value={child.stats.hits} color="text-sky-400" icon={<IconBat size={18} />} />
+              <StatTile label="Doběhy" value={child.stats.runs} color="text-emerald-400" icon={<IconRunner size={18} />} />
+              <StatTile label="HR" value={child.stats.homeRuns} color="text-red-400" icon={<IconHomeRun size={18} />} />
+              <StatTile label="Zápasy" value={child.stats.games} color="text-amber-400" icon={<IconGames size={18} />} />
             </div>
           </section>
         )}
