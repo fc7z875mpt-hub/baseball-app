@@ -4,20 +4,7 @@ import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-
-function DiamondLogo({ size = 88 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 120 120" fill="none" aria-hidden>
-      <path d="M60 8 L112 60 L60 112 L8 60 Z" fill="#0a1628" stroke="#ffffff" strokeWidth="3" />
-      <path d="M60 18 L102 60 L60 102 L18 60 Z" fill="#1e3a5f" stroke="#ffffff" strokeWidth="2" />
-      <circle cx="60" cy="60" r="22" fill="white" />
-      <path d="M48 48 Q52 60 48 72" stroke="#dc2626" strokeWidth="2" fill="none" strokeLinecap="round" />
-      <path d="M72 48 Q68 60 72 72" stroke="#dc2626" strokeWidth="2" fill="none" strokeLinecap="round" />
-      <path d="M46 52 L50 50M46 58 L50 56M46 64 L50 62M46 70 L50 68" stroke="#dc2626" strokeWidth="1.5" strokeLinecap="round" />
-      <path d="M70 50 L74 52M70 56 L74 58M70 62 L74 64M70 68 L74 70" stroke="#dc2626" strokeWidth="1.5" strokeLinecap="round" />
-    </svg>
-  );
-}
+import { DiamondLogo } from "@/components/DiamondLogo";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -58,10 +45,14 @@ export default function LoginPage() {
 
       <div className="relative z-10 w-full max-w-sm">
         <div className="mb-8 flex flex-col items-center">
-          <DiamondLogo size={88} />
-          <h1 className="mt-4 text-2xl font-black tracking-tight text-white">DIAMOND</h1>
-          <h2 className="-mt-0.5 text-2xl font-black tracking-tight text-red-600">YOUTH</h2>
-          <p className="mt-1 text-[10px] font-semibold tracking-[0.2em] text-white/50">
+          <DiamondLogo size={148} />
+          <h1 className="mt-5 text-3xl font-black tracking-tight text-white sm:text-4xl">
+            DIAMOND
+          </h1>
+          <h2 className="-mt-1 text-3xl font-black tracking-tight text-red-600 sm:text-4xl">
+            YOUTH
+          </h2>
+          <p className="mt-2 text-[11px] font-semibold tracking-[0.22em] text-white/50">
             CZECH YOUTH BASEBALL
           </p>
         </div>

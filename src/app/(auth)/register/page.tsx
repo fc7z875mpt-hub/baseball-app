@@ -2,20 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { DiamondLogo } from "@/components/DiamondLogo";
 
 const CATEGORIES = ["U8", "U9", "U10", "U11", "U12", "U13", "U15", "U18"];
-
-function DiamondLogo({ size = 64 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 120 120" fill="none" aria-hidden>
-      <path d="M60 8 L112 60 L60 112 L8 60 Z" fill="#0a1628" stroke="#ffffff" strokeWidth="3" />
-      <path d="M60 18 L102 60 L60 102 L18 60 Z" fill="#1e3a5f" stroke="#ffffff" strokeWidth="2" />
-      <circle cx="60" cy="60" r="22" fill="white" />
-      <path d="M48 48 Q52 60 48 72" stroke="#dc2626" strokeWidth="2" fill="none" strokeLinecap="round" />
-      <path d="M72 48 Q68 60 72 72" stroke="#dc2626" strokeWidth="2" fill="none" strokeLinecap="round" />
-    </svg>
-  );
-}
 
 export default function RegisterPage() {
   const [form, setForm] = useState({
@@ -108,7 +97,7 @@ export default function RegisterPage() {
 
       <div className="relative z-10 w-full max-w-sm">
         <div className="mb-6 flex flex-col items-center">
-          <DiamondLogo size={64} />
+          <DiamondLogo size={100} />
           <h1 className="mt-3 text-xl font-black text-white">
             DIAMOND <span className="text-red-600">YOUTH</span>
           </h1>
