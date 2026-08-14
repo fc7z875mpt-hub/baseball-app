@@ -3,18 +3,18 @@ import "./globals.css";
 import { Providers } from "@/components/Providers";
 
 export const metadata: Metadata = {
-  title: "Baseball Statistiky",
-  description: "Moderní aplikace pro mládežnické baseballové týmy – statistiky, živý zápis zápasů a správa hráčů",
+  title: "Diamond Youth – Czech Youth Baseball",
+  description: "Aplikace pro mládežnické baseballové týmy – statistiky, živý zápis zápasů a správa hráčů",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
-    title: "Baseball Statistiky",
+    statusBarStyle: "black-translucent",
+    title: "Diamond Youth",
   },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#1e3a5f",
+  themeColor: "#0a1628",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,

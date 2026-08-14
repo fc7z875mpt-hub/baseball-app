@@ -1,112 +1,108 @@
 import Link from "next/link";
 
-const TEAMS = [
-  { name: "Hroši", color: "#1e3a5f", letter: "H" },
-  { name: "Draci", color: "#b91c1c", letter: "D" },
-  { name: "Arrows", color: "#0369a1", letter: "A" },
-  { name: "Tempo", color: "#15803d", letter: "T" },
-  { name: "Technika", color: "#7c3aed", letter: "T" },
-  { name: "SaBaT", color: "#c2410c", letter: "S" },
-  { name: "Kotlářka", color: "#0e7490", letter: "K" },
-  { name: "Eagles", color: "#1d4ed8", letter: "E" },
-];
+function DiamondLogo({ size = 120 }: { size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 120 120"
+      fill="none"
+      aria-hidden
+    >
+      {/* Outer diamond */}
+      <path
+        d="M60 8 L112 60 L60 112 L8 60 Z"
+        fill="#0a1628"
+        stroke="#ffffff"
+        strokeWidth="3"
+      />
+      {/* Inner diamond */}
+      <path
+        d="M60 18 L102 60 L60 102 L18 60 Z"
+        fill="#1e3a5f"
+        stroke="#ffffff"
+        strokeWidth="2"
+      />
+      {/* Baseball */}
+      <circle cx="60" cy="60" r="22" fill="white" />
+      {/* Red stitches left */}
+      <path
+        d="M48 48 Q52 60 48 72"
+        stroke="#dc2626"
+        strokeWidth="2"
+        fill="none"
+        strokeLinecap="round"
+      />
+      <path d="M46 52 L50 50" stroke="#dc2626" strokeWidth="1.5" strokeLinecap="round" />
+      <path d="M46 58 L50 56" stroke="#dc2626" strokeWidth="1.5" strokeLinecap="round" />
+      <path d="M46 64 L50 62" stroke="#dc2626" strokeWidth="1.5" strokeLinecap="round" />
+      <path d="M46 70 L50 68" stroke="#dc2626" strokeWidth="1.5" strokeLinecap="round" />
+      {/* Red stitches right */}
+      <path
+        d="M72 48 Q68 60 72 72"
+        stroke="#dc2626"
+        strokeWidth="2"
+        fill="none"
+        strokeLinecap="round"
+      />
+      <path d="M70 50 L74 52" stroke="#dc2626" strokeWidth="1.5" strokeLinecap="round" />
+      <path d="M70 56 L74 58" stroke="#dc2626" strokeWidth="1.5" strokeLinecap="round" />
+      <path d="M70 62 L74 64" stroke="#dc2626" strokeWidth="1.5" strokeLinecap="round" />
+      <path d="M70 68 L74 70" stroke="#dc2626" strokeWidth="1.5" strokeLinecap="round" />
+      {/* Corner stitch accents */}
+      <path d="M30 50 L35 45" stroke="#dc2626" strokeWidth="1.5" strokeLinecap="round" opacity="0.7" />
+      <path d="M28 55 L34 52" stroke="#dc2626" strokeWidth="1.5" strokeLinecap="round" opacity="0.7" />
+      <path d="M90 50 L85 45" stroke="#dc2626" strokeWidth="1.5" strokeLinecap="round" opacity="0.7" />
+      <path d="M92 55 L86 52" stroke="#dc2626" strokeWidth="1.5" strokeLinecap="round" opacity="0.7" />
+    </svg>
+  );
+}
 
 export default function HomePage() {
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#0b1220]">
-      {/* Ambient glow */}
+    <main className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-black px-6 py-12">
+      {/* Soft stadium glow */}
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute left-1/2 top-0 h-[500px] w-[800px] -translate-x-1/2 rounded-full bg-sky-500/20 blur-[120px]" />
-        <div className="absolute bottom-0 left-0 h-80 w-80 rounded-full bg-blue-600/15 blur-[100px]" />
-        <div className="absolute bottom-20 right-0 h-72 w-72 rounded-full bg-indigo-500/10 blur-[90px]" />
+        <div className="absolute left-1/2 top-0 h-[420px] w-[600px] -translate-x-1/2 rounded-full bg-blue-900/25 blur-[100px]" />
+        <div className="absolute bottom-0 left-1/2 h-40 w-full -translate-x-1/2 bg-gradient-to-t from-red-950/20 to-transparent" />
       </div>
 
-      {/* Floating team badges */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        {TEAMS.map((team, i) => {
-          const positions = [
-            "top-[12%] left-[6%]",
-            "top-[18%] right-[8%]",
-            "top-[42%] left-[3%]",
-            "top-[38%] right-[4%]",
-            "bottom-[22%] left-[8%]",
-            "bottom-[18%] right-[7%]",
-            "bottom-[8%] left-[28%]",
-            "bottom-[10%] right-[26%]",
-          ];
-          const sizes = ["h-11 w-11", "h-14 w-14", "h-10 w-10", "h-12 w-12", "h-13 w-13", "h-11 w-11", "h-10 w-10", "h-12 w-12"];
-          return (
-            <div
-              key={team.name}
-              className={`absolute ${positions[i]} hidden sm:flex ${sizes[i]} items-center justify-center rounded-full border border-white/10 shadow-lg opacity-70`}
-              style={{ backgroundColor: team.color }}
-              title={team.name}
-            >
-              <span className="text-sm font-bold text-white/90">{team.letter}</span>
-            </div>
-          );
-        })}
-      </div>
+      <div className="relative z-10 flex w-full max-w-sm flex-col items-center">
+        <DiamondLogo size={130} />
 
-      {/* Content */}
-      <div className="relative z-10 mx-auto flex min-h-screen max-w-md flex-col items-center justify-center px-6 py-16">
-        {/* Ball icon */}
-        <div className="mb-8 flex h-24 w-24 items-center justify-center rounded-[2rem] bg-gradient-to-br from-sky-400 to-blue-600 shadow-2xl shadow-sky-500/30">
-          <svg viewBox="0 0 48 48" className="h-14 w-14 text-white" fill="none" aria-hidden>
-            <circle cx="24" cy="24" r="18" stroke="currentColor" strokeWidth="2.5" />
-            <path d="M10 16 Q24 24 10 32" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-            <path d="M38 16 Q24 24 38 32" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-          </svg>
-        </div>
-
-        <h1 className="mb-10 text-center text-4xl font-bold tracking-tight text-white sm:text-5xl">
-          Baseball
-          <span className="block bg-gradient-to-r from-sky-300 to-blue-400 bg-clip-text text-transparent">
-            Statistiky
-          </span>
+        <h1 className="mt-6 text-center text-4xl font-black tracking-tight text-white sm:text-5xl">
+          DIAMOND
         </h1>
+        <h2 className="-mt-1 text-center text-4xl font-black tracking-tight text-red-600 sm:text-5xl">
+          YOUTH
+        </h2>
 
-        {/* CTA card */}
-        <div className="w-full rounded-3xl border border-white/10 bg-white/5 p-7 shadow-2xl backdrop-blur-xl">
-          <div className="space-y-3">
-            <Link
-              href="/login"
-              className="flex w-full items-center justify-center rounded-2xl bg-gradient-to-r from-sky-400 to-blue-500 px-5 py-4 text-base font-semibold text-white shadow-lg shadow-sky-500/25 transition hover:brightness-110 active:scale-[0.98]"
-            >
-              Přihlásit se
-            </Link>
-            <Link
-              href="/register"
-              className="flex w-full items-center justify-center rounded-2xl border border-white/20 bg-white/5 px-5 py-4 text-base font-semibold text-white transition hover:bg-white/10 active:scale-[0.98]"
-            >
-              Registrace
-            </Link>
+        <div className="mt-3 flex items-center gap-3">
+          <div className="h-px w-10 bg-white/30" />
+          <div className="flex h-1 w-8 overflow-hidden rounded-full">
+            <div className="w-1/2 bg-blue-700" />
+            <div className="w-1/2 bg-red-600" />
           </div>
-
-          {/* Feature pills */}
-          <div className="mt-7 flex flex-wrap justify-center gap-2">
-            {["Živé skóre", "Statistiky hráčů", "Zápis na mobilu"].map((label) => (
-              <span
-                key={label}
-                className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-medium text-sky-200/80"
-              >
-                {label}
-              </span>
-            ))}
-          </div>
+          <div className="h-px w-10 bg-white/30" />
         </div>
 
-        {/* Mobile team row */}
-        <div className="mt-10 flex gap-2 sm:hidden">
-          {TEAMS.slice(0, 6).map((team) => (
-            <div
-              key={team.name}
-              className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10"
-              style={{ backgroundColor: team.color }}
-            >
-              <span className="text-xs font-bold text-white">{team.letter}</span>
-            </div>
-          ))}
+        <p className="mt-3 text-center text-[11px] font-semibold tracking-[0.25em] text-white/60">
+          CZECH YOUTH BASEBALL
+        </p>
+
+        <div className="mt-10 w-full space-y-3">
+          <Link
+            href="/login"
+            className="flex w-full items-center justify-center rounded-xl bg-red-600 py-3.5 text-base font-semibold text-white transition hover:bg-red-500 active:scale-[0.98]"
+          >
+            Přihlásit se
+          </Link>
+          <Link
+            href="/register"
+            className="flex w-full items-center justify-center rounded-xl border border-white/20 bg-transparent py-3.5 text-base font-semibold text-white transition hover:bg-white/5 active:scale-[0.98]"
+          >
+            Registrace
+          </Link>
         </div>
       </div>
     </main>
