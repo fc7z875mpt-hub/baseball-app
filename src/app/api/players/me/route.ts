@@ -4,7 +4,10 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { aggregateStats } from "@/lib/stats";
 
-/** Děti přihlášeného rodiče + agregované statistiky */
+/**
+ * Děti přihlášeného rodiče + agregované statistiky.
+ * Admin/organizátor sem NEpatří – nenačítat stovky hráčů.
+ */
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
@@ -19,14 +22,16 @@ export async function GET() {
       return NextResponse.json({ error: "Nepřihlášen" }, { status: 401 });
     }
 
-    // Admin/organizátor může vidět všechny hráče (pro přehled), rodič jen své děti
-    const where =
-      role === "ADMIN" || role === "ORGANIZER"
-        ? {}
-        : { parentId: userId };
+    // Staff má jiné nástroje – tady jen rodičovské děti
+    if (role === "ADMIN" || role === "ORGANIZER") {
+      return NextResponse.json({
+        players: [],
+        note: "Staff: použijte admin panel s filtry, ne plný seznam.",
+      });
+    }
 
     const players = await prisma.player.findMany({
-      where,
+      where: { parentId: userId },
       orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
       include: {
         teams: {
@@ -65,7 +70,6 @@ export async function GET() {
       },
     });
 
-    // Rodič bez dětí – prázdný seznam (ne chyba)
     const result = players.map((p) => {
       const aggregated = aggregateStats(p.stats);
       const primaryTeam = p.teams[0]?.team ?? null;
