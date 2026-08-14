@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { IconSettings } from "@/components/Icons";
 
 type Role = "PARENT" | "ORGANIZER" | "ADMIN" | string | undefined;
 
@@ -76,23 +77,13 @@ export function BottomNav({
     items.push({
       href: "/admin",
       label: "Admin",
-      icon: () => (
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="12" cy="12" r="3" />
-          <path d="M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4" />
-        </svg>
-      ),
+      icon: () => <IconSettings size={22} />,
     });
   } else {
     items.push({
       href: "/dashboard/profile",
       label: "Nastavení",
-      icon: () => (
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="12" cy="12" r="3" />
-          <path d="M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4" />
-        </svg>
-      ),
+      icon: () => <IconSettings size={22} />,
     });
   }
 
