@@ -17,18 +17,46 @@ export async function GET() {
         OR: [
           { status: "SCHEDULED", date: { gte: new Date(now.getTime() - 86400000) } },
           { status: "LIVE" },
+          {
+            status: "FINISHED",
+            date: { gte: new Date(now.getTime() - 7 * 86400000) },
+          },
         ],
       },
       orderBy: [{ status: "asc" }, { date: "asc" }],
-      take: 5,
+      take: 8,
       include: {
-        homeTeam: { select: { id: true, name: true, shortName: true, primaryColor: true } },
-        awayTeam: { select: { id: true, name: true, shortName: true } },
+        homeTeam: {
+          select: {
+            id: true,
+            name: true,
+            shortName: true,
+            primaryColor: true,
+            logoUrl: true,
+          },
+        },
+        awayTeam: {
+          select: {
+            id: true,
+            name: true,
+            shortName: true,
+            primaryColor: true,
+            logoUrl: true,
+          },
+        },
       },
     });
 
+    // LIVE first, then SCHEDULED by date, then recent FINISHED
+    const rank = (s: string) => (s === "LIVE" ? 0 : s === "SCHEDULED" ? 1 : 2);
+    matches.sort((a, b) => {
+      const r = rank(a.status) - rank(b.status);
+      if (r !== 0) return r;
+      return new Date(a.date).getTime() - new Date(b.date).getTime();
+    });
+
     return NextResponse.json({
-      matches: matches.map((m) => ({
+      matches: matches.slice(0, 5).map((m) => ({
         id: m.id,
         date: m.date,
         time: m.time,
@@ -37,6 +65,7 @@ export async function GET() {
         homeScore: m.homeScore,
         awayScore: m.awayScore,
         homeTeam: m.homeTeam,
+        awayTeam: m.awayTeam,
         opponent: m.awayTeamName || m.awayTeam?.name || "Soupeř",
         isHome: m.isHome,
       })),
