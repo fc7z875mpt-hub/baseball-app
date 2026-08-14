@@ -4,8 +4,6 @@ import { useSession } from "next-auth/react";
 import { useRouter, useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { StatCard } from "@/components/StatCard";
-import { BarChart } from "@/components/BarChart";
 import { TrendChart } from "@/components/TrendChart";
 import { formatAvg, type AggregatedStats } from "@/lib/stats";
 
@@ -47,19 +45,12 @@ type CompareData = {
   scope: string;
   me: { hits: number; runs: number; homeRuns: number; games: number; avg: number | null };
   teamAverage: { hits: number; runs: number; homeRuns: number; games: number; avg: number };
-  best: {
-    name: string;
-    hits: number;
-    runs: number;
-    homeRuns: number;
-    games: number;
-    avg: number | null;
-  } | null;
+  best: { name: string; hits: number; runs: number; homeRuns: number; games: number; avg: number | null } | null;
   peerCount: number;
 };
 
 export default function PlayerProfilePage() {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const router = useRouter();
   const params = useParams();
   const id = params.id as string;
@@ -72,6 +63,7 @@ export default function PlayerProfilePage() {
   const [compare, setCompare] = useState<CompareData | null>(null);
   const [compareScope, setCompareScope] = useState<"team" | "category">("team");
   const [showCompare, setShowCompare] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
 
@@ -84,6 +76,7 @@ export default function PlayerProfilePage() {
     setLoading(true);
     setShowCompare(false);
     setCompare(null);
+    setExpanded(false);
 
     Promise.all([
       fetch(`/api/players/${id}`).then(async (r) => {
@@ -125,9 +118,7 @@ export default function PlayerProfilePage() {
 
   if (status === "loading" || loading) {
     return (
-      <main className="flex min-h-screen items-center justify-center text-white/60">
-        Načítám profil…
-      </main>
+      <main className="flex min-h-screen items-center justify-center text-white/60">Načítám profil…</main>
     );
   }
 
@@ -135,9 +126,7 @@ export default function PlayerProfilePage() {
     return (
       <main className="px-4 py-8">
         <div className="mx-auto max-w-lg">
-          <Link href="/dashboard" className="text-sm text-sky-400">
-            ← Domů
-          </Link>
+          <Link href="/dashboard" className="text-sm text-sky-400">← Domů</Link>
           <p className="mt-6 text-white/60">{error || "Hráč nenalezen"}</p>
         </div>
       </main>
@@ -148,23 +137,36 @@ export default function PlayerProfilePage() {
   const season = player.teams[0]?.season;
   const color = team?.primaryColor || "#1e3a5f";
 
-  const hitBreakdown = [
-    { label: "1B", value: stats.singles, color: "#7dd3fc" },
-    { label: "2B", value: stats.doubles, color: "#38bdf8" },
-    { label: "3B", value: stats.triples, color: "#0ea5e9" },
-    { label: "HR", value: stats.homeRuns, color: "#e11d2e" },
-  ];
-
   const trendPoints = recent.map((g, i) => ({
     label: `Z${i + 1}`,
     hits: g.hits,
     atBats: g.atBats,
   }));
 
+  // Porovnání jako křivky – flat values mapped to chart series (relative %)
+  const compareSeries =
+    showCompare && compare
+      ? [
+          {
+            label: "Průměr",
+            color: "#94a3b8",
+            values: trendPoints.map(() =>
+              Math.min(100, Math.round((compare.teamAverage.avg || 0) * 100))
+            ),
+          },
+          {
+            label: compare.best ? `Nejlepší (${compare.best.name.split(" ")[0]})` : "Nejlepší",
+            color: "#fbbf24",
+            values: trendPoints.map(() =>
+              Math.min(100, Math.round((compare.best?.avg || 0) * 100))
+            ),
+          },
+        ]
+      : undefined;
+
   return (
-    <main className="px-4 pt-5">
+    <main className="px-4 pt-5 pb-4">
       <div className="mx-auto max-w-lg space-y-5">
-        {/* Přepínač dětí */}
         {siblings.length > 1 && (
           <div className="flex gap-2 overflow-x-auto pb-1">
             {siblings.map((s) => (
@@ -172,9 +174,7 @@ export default function PlayerProfilePage() {
                 key={s.id}
                 href={`/dashboard/player/${s.id}`}
                 className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-medium transition ${
-                  s.id === id
-                    ? "bg-sky-600 text-white"
-                    : "bg-white/5 text-white/50 hover:bg-white/10"
+                  s.id === id ? "bg-sky-600 text-white" : "bg-white/5 text-white/50 hover:bg-white/10"
                 }`}
               >
                 {s.firstName}
@@ -183,100 +183,131 @@ export default function PlayerProfilePage() {
           </div>
         )}
 
-        {/* Hlavička hráče */}
-        <div className="rounded-2xl border border-white/10 bg-[#0d1b2e] p-5">
-          <div className="flex items-center gap-4">
-            {player.photoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={player.photoUrl}
-                alt=""
-                className="h-16 w-16 rounded-2xl object-cover ring-2 ring-white/10"
-              />
-            ) : (
-              <div
-                className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl text-xl font-black text-white shadow-lg"
-                style={{ backgroundColor: color }}
-              >
-                {player.jerseyNumber != null
-                  ? `#${player.jerseyNumber}`
-                  : `${player.firstName[0]}${player.lastName[0]}`}
-              </div>
-            )}
-            <div className="min-w-0">
-              <h1 className="truncate text-xl font-bold">
-                {player.firstName} {player.lastName}
-              </h1>
-              <p className="text-sm text-white/55">
-                {[team?.name, player.category, player.birthYear]
-                  .filter(Boolean)
-                  .join(" · ")}
-              </p>
-              {season && (
-                <p className="mt-0.5 text-xs text-white/35">{season.name}</p>
-              )}
+        {/* Centrální profil */}
+        <div className="flex flex-col items-center pt-2 text-center">
+          {player.photoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={player.photoUrl}
+              alt=""
+              className="h-28 w-28 rounded-full object-cover ring-4 ring-white/10 shadow-xl"
+            />
+          ) : (
+            <div
+              className="flex h-28 w-28 items-center justify-center rounded-full text-3xl font-black text-white ring-4 ring-white/10 shadow-xl"
+              style={{ backgroundColor: color }}
+            >
+              {player.firstName[0]}
+              {player.lastName[0]}
             </div>
-          </div>
+          )}
+          <h1 className="mt-4 text-2xl font-bold tracking-tight">
+            {player.firstName} {player.lastName}
+          </h1>
+          {player.jerseyNumber != null && (
+            <p className="mt-1 text-lg font-semibold text-sky-400">#{player.jerseyNumber}</p>
+          )}
+          <p className="mt-1 text-sm text-white/55">
+            {[team?.name, player.category || (player.birthYear ? String(player.birthYear) : null)]
+              .filter(Boolean)
+              .join(" · ")}
+          </p>
+          {season && <p className="mt-0.5 text-xs text-white/35">{season.name}</p>}
         </div>
 
-        {/* Základní karty – klik = vysvětlení */}
-        <div>
-          <h2 className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wider text-white/40">
-            Útok · klepni na kartu pro vysvětlení
-          </h2>
-          <div className="grid grid-cols-4 gap-2">
-            <StatCard label="Hity" value={stats.hits} accent="blue" />
-            <StatCard label="Doběhy" value={stats.runs} />
-            <StatCard label="HR" value={stats.homeRuns} accent="red" />
-            <StatCard label="Zápasy" value={stats.games} />
-          </div>
+        {/* Hlavní 3 stats */}
+        <div className="grid grid-cols-3 gap-3">
+          <BigStat
+            label="Hity"
+            value={stats.hits}
+            color="sky"
+            icon={
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="m14 4 6 6-8 8-6-6Z" />
+                <path d="m4 14 6 6" />
+              </svg>
+            }
+          />
+          <BigStat
+            label="Doběhy"
+            value={stats.runs}
+            color="emerald"
+            icon={
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="5" r="2" />
+                <path d="M12 7v5l3 3" />
+                <path d="m9 15 3 6 3-6" />
+              </svg>
+            }
+          />
+          <BigStat
+            label="HR"
+            value={stats.homeRuns}
+            color="red"
+            icon={
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="9" />
+                <path d="M12 3c2 3 2 6 0 9s-2 6 0 9" />
+                <path d="M3 12h18" />
+              </svg>
+            }
+          />
         </div>
 
-        <div className="grid grid-cols-4 gap-2">
-          <StatCard label="AVG" value={formatAvg(stats.avg)} accent="red" />
-          <StatCard label="RBI" value={stats.rbi} />
-          <StatCard label="BB" value={stats.walks} />
-          <StatCard label="SO" value={stats.strikeouts} />
-        </div>
+        {/* Tip + expand */}
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          className="w-full rounded-2xl border border-dashed border-sky-500/30 bg-sky-500/5 px-4 py-3 text-center text-sm text-sky-300/90 transition hover:bg-sky-500/10"
+        >
+          {expanded ? "Skrýt detailní statistiky ▲" : "Klepni pro kompletní statistiky ▼"}
+        </button>
 
-        {stats.games > 0 && (
-          <div className="grid grid-cols-3 gap-2">
-            <StatCard label="OBP" value={formatAvg(stats.obp)} />
-            <StatCard label="SLG" value={formatAvg(stats.slg)} />
-            <StatCard label="OPS" value={formatAvg(stats.ops)} accent="green" />
+        {expanded && (
+          <div className="space-y-3 animate-in fade-in">
+            <div className="grid grid-cols-4 gap-2">
+              <MiniStat label="Zápasy" value={stats.games} />
+              <MiniStat label="AVG" value={formatAvg(stats.avg)} accent />
+              <MiniStat label="RBI" value={stats.rbi} />
+              <MiniStat label="BB" value={stats.walks} />
+              <MiniStat label="SO" value={stats.strikeouts} />
+              <MiniStat label="OBP" value={formatAvg(stats.obp)} />
+              <MiniStat label="SLG" value={formatAvg(stats.slg)} />
+              <MiniStat label="OPS" value={formatAvg(stats.ops)} accent />
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              <MiniStat label="Chyby" value={stats.errors} />
+              <MiniStat label="Putout" value={stats.putouts} />
+              <MiniStat label="Asistence" value={stats.assists} />
+            </div>
+            <p className="text-center text-[10px] text-white/30">
+              AVG = hity/AB · OBP = na metu · SLG = síla · OPS = OBP+SLG
+            </p>
           </div>
         )}
 
-        <div>
-          <h2 className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wider text-white/40">
-            Práce v poli
-          </h2>
-          <div className="grid grid-cols-3 gap-2">
-            <StatCard label="Chyby" value={stats.errors} />
-            <StatCard label="Putout" value={stats.putouts} />
-            <StatCard label="Asistence" value={stats.assists} />
-          </div>
-        </div>
+        {/* Graf výkonu */}
+        {trendPoints.length > 0 && (
+          <TrendChart
+            points={trendPoints}
+            title="Výkon v posledních zápasech"
+            series={compareSeries}
+          />
+        )}
 
-        {stats.hits > 0 && <BarChart items={hitBreakdown} title="Složení hitů" />}
-
-        {trendPoints.length > 0 && <TrendChart points={trendPoints} />}
-
-        {/* Porovnat – jen s oprávněním */}
+        {/* Porovnat */}
         {canCompare && stats.games > 0 && (
           <section className="space-y-3">
             <div className="flex items-center justify-between">
               <h2 className="px-1 text-[11px] font-semibold uppercase tracking-wider text-white/40">
-                Porovnat
+                Porovnání výkonu
               </h2>
               <div className="flex gap-1.5">
                 <button
                   type="button"
                   onClick={() => loadCompare("team")}
                   className={`rounded-full px-3 py-1 text-[11px] font-medium ${
-                    showCompare && compareScope === "team"
-                      ? "bg-sky-600 text-white"
-                      : "bg-white/10 text-white/60"
+                    showCompare && compareScope === "team" ? "bg-sky-600 text-white" : "bg-white/10 text-white/60"
                   }`}
                 >
                   Tým
@@ -285,9 +316,7 @@ export default function PlayerProfilePage() {
                   type="button"
                   onClick={() => loadCompare("category")}
                   className={`rounded-full px-3 py-1 text-[11px] font-medium ${
-                    showCompare && compareScope === "category"
-                      ? "bg-sky-600 text-white"
-                      : "bg-white/10 text-white/60"
+                    showCompare && compareScope === "category" ? "bg-sky-600 text-white" : "bg-white/10 text-white/60"
                   }`}
                 >
                   Kategorie
@@ -296,45 +325,31 @@ export default function PlayerProfilePage() {
             </div>
 
             {showCompare && compare && (
-              <div className="space-y-2 rounded-2xl border border-purple-500/20 bg-purple-500/5 p-4">
-                <p className="text-xs text-white/45">
+              <div className="rounded-2xl border border-purple-500/20 bg-purple-500/5 p-4 text-xs text-white/60">
+                <p className="mb-2">
                   {compareScope === "team" ? "V rámci týmu" : "V kategorii"}
-                  {compare.peerCount > 0
-                    ? ` · ${compare.peerCount} spoluhráčů`
-                    : " · zatím málo dat"}
+                  {compare.peerCount > 0 ? ` · ${compare.peerCount} hráčů` : " · málo dat"}
                 </p>
-                <CompareRow
-                  label="Hity"
-                  me={compare.me.hits}
-                  avg={compare.teamAverage.hits}
-                  best={compare.best?.hits}
-                  bestName={compare.best?.name}
-                />
-                <CompareRow
-                  label="Doběhy"
-                  me={compare.me.runs}
-                  avg={compare.teamAverage.runs}
-                  best={compare.best?.runs}
-                  bestName={compare.best?.name}
-                />
-                <CompareRow
-                  label="HR"
-                  me={compare.me.homeRuns}
-                  avg={compare.teamAverage.homeRuns}
-                  best={compare.best?.homeRuns}
-                  bestName={compare.best?.name}
-                />
-                <div className="flex gap-3 pt-1 text-[10px] text-white/40">
-                  <span className="flex items-center gap-1">
-                    <span className="h-2 w-2 rounded-full bg-sky-400" /> Ty
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <span className="h-2 w-2 rounded-full bg-white/40" /> Průměr
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <span className="h-2 w-2 rounded-full bg-amber-400" /> Nejlepší
-                  </span>
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  <div>
+                    <p className="text-[10px] text-sky-400">Ty</p>
+                    <p className="text-lg font-bold text-sky-300">{formatAvg(compare.me.avg)}</p>
+                    <p className="text-[10px] text-white/35">{compare.me.hits} H</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-white/50">Průměr</p>
+                    <p className="text-lg font-bold text-white/70">{formatAvg(compare.teamAverage.avg)}</p>
+                    <p className="text-[10px] text-white/35">{compare.teamAverage.hits} H</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-amber-400">Nejlepší</p>
+                    <p className="text-lg font-bold text-amber-300">{formatAvg(compare.best?.avg ?? null)}</p>
+                    <p className="truncate text-[10px] text-white/35">{compare.best?.name || "—"}</p>
+                  </div>
                 </div>
+                <p className="mt-3 text-[10px] text-white/30">
+                  Křivky v grafu nahoře: ty (modrá) · průměr (šedá) · nejlepší (zlatá)
+                </p>
               </div>
             )}
 
@@ -362,29 +377,32 @@ export default function PlayerProfilePage() {
                   day: "numeric",
                   month: "short",
                 });
-                const detail = [
-                  `${g.runs} R`,
-                  g.homeRuns > 0 ? `${g.homeRuns} HR` : null,
-                  g.errors > 0 ? `${g.errors} E` : null,
-                ]
-                  .filter(Boolean)
-                  .join(" · ");
                 return (
                   <div
                     key={g.matchId}
-                    className="flex items-center justify-between rounded-xl border border-white/10 bg-[#0d1b2e] px-3 py-2.5"
+                    className="flex items-center gap-3 rounded-xl border border-white/10 bg-[#0d1b2e] px-3 py-2.5"
                   >
-                    <div>
-                      <p className="text-sm font-medium">vs {g.opponent}</p>
+                    {/* Štít klubu / soupeře */}
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/5 text-xs font-bold text-white/50 ring-1 ring-white/10">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                        <path d="M12 2 4 6v6c0 5 3.5 8.5 8 10 4.5-1.5 8-5 8-10V6l-8-4Z" />
+                      </svg>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium">vs {g.opponent}</p>
                       <p className="text-xs text-white/40">
                         {dateLabel} · {g.result}
                       </p>
                     </div>
                     <div className="text-right text-sm tabular-nums">
-                      <p className="font-semibold">
+                      <p className="font-semibold text-sky-300">
                         {g.hits}/{g.atBats}
                       </p>
-                      <p className="text-xs text-white/40">{detail}</p>
+                      <p className="text-xs text-white/40">
+                        {[`${g.runs} R`, g.homeRuns > 0 ? `${g.homeRuns} HR` : null]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </p>
                     </div>
                   </div>
                 );
@@ -403,54 +421,36 @@ export default function PlayerProfilePage() {
   );
 }
 
-function CompareRow({
+function BigStat({
   label,
-  me,
-  avg,
-  best,
-  bestName,
+  value,
+  icon,
+  color,
 }: {
   label: string;
-  me: number;
-  avg: number;
-  best?: number;
-  bestName?: string;
+  value: number;
+  icon: React.ReactNode;
+  color: "sky" | "emerald" | "red";
 }) {
-  const max = Math.max(me, avg, best ?? 0, 1);
+  const map = {
+    sky: "border-sky-500/25 bg-sky-500/10 text-sky-400",
+    emerald: "border-emerald-500/25 bg-emerald-500/10 text-emerald-400",
+    red: "border-red-500/25 bg-red-500/10 text-red-400",
+  };
   return (
-    <div>
-      <div className="mb-1 flex justify-between text-xs">
-        <span className="text-white/60">{label}</span>
-        <span className="tabular-nums text-white/80">
-          <span className="text-sky-400">{me}</span>
-          <span className="text-white/30"> / </span>
-          <span className="text-white/50">{avg}</span>
-          {best != null && (
-            <>
-              <span className="text-white/30"> / </span>
-              <span className="text-amber-400" title={bestName}>
-                {best}
-              </span>
-            </>
-          )}
-        </span>
-      </div>
-      <div className="relative h-2 overflow-hidden rounded-full bg-white/5">
-        <div
-          className="absolute left-0 top-0 h-full rounded-full bg-white/20"
-          style={{ width: `${(avg / max) * 100}%` }}
-        />
-        {best != null && (
-          <div
-            className="absolute left-0 top-0 h-full rounded-full bg-amber-400/40"
-            style={{ width: `${(best / max) * 100}%` }}
-          />
-        )}
-        <div
-          className="absolute left-0 top-0 h-full rounded-full bg-sky-400"
-          style={{ width: `${(me / max) * 100}%` }}
-        />
-      </div>
+    <div className={`rounded-2xl border px-3 py-4 text-center ${map[color]}`}>
+      <div className="mb-1.5 flex justify-center">{icon}</div>
+      <p className="text-2xl font-bold tabular-nums text-white">{value}</p>
+      <p className="mt-0.5 text-[11px] font-medium opacity-80">{label}</p>
+    </div>
+  );
+}
+
+function MiniStat({ label, value, accent }: { label: string; value: string | number; accent?: boolean }) {
+  return (
+    <div className="rounded-xl border border-white/10 bg-[#0d1b2e] px-2 py-2.5 text-center">
+      <p className={`text-base font-bold tabular-nums ${accent ? "text-sky-400" : "text-white"}`}>{value}</p>
+      <p className="text-[10px] text-white/40">{label}</p>
     </div>
   );
 }
