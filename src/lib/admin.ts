@@ -1,20 +1,20 @@
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { authOptions } from "./auth";
+import { NextResponse } from "next/server";
 
 export async function requireAdmin() {
   const session = await getServerSession(authOptions);
-  if (!session?.user || (session.user as any).role !== "ADMIN") {
-    return null;
+  if (!session?.user || session.user.role !== "ADMIN") {
+    return { error: NextResponse.json({ error: "Forbidden" }, { status: 403 }) };
   }
-  return session;
+  return { session };
 }
 
-export const CATEGORY_ORDER = ["U8", "U9", "U10", "U11", "U12", "U13", "U15", "U18"] as const;
+const CATEGORY_ORDER = ["U7", "U8", "U9", "U10", "U11", "U12", "U13", "U15", "U18"] as const;
 
-export function nextCategory(current: string | null | undefined): string | null {
+export function nextCategory(current: string | null): string | null {
   if (!current) return null;
-  const idx = CATEGORY_ORDER.indexOf(current as any);
-  if (idx < 0) return current;
-  if (idx >= CATEGORY_ORDER.length - 1) return current; // U18 stays
+  const idx = (CATEGORY_ORDER as readonly string[]).indexOf(current);
+  if (idx < 0 || idx >= CATEGORY_ORDER.length - 1) return current;
   return CATEGORY_ORDER[idx + 1];
 }

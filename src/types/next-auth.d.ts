@@ -8,6 +8,7 @@ declare module "next-auth" {
     canCompare: boolean;
     firstName: string;
     lastName: string;
+    greeting?: string | null;
   }
 
   interface Session {
@@ -19,6 +20,7 @@ declare module "next-auth" {
       canCompare: boolean;
       firstName: string;
       lastName: string;
+      greeting?: string | null;
     };
   }
 }
@@ -30,5 +32,6 @@ declare module "next-auth/jwt" {
     canCompare: boolean;
     firstName: string;
     lastName: string;
+    greeting?: string | null;
   }
 }

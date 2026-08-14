@@ -77,13 +77,12 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user, trigger, session }) {
       if (user) {
         token.id = user.id;
-        token.role = (user as any).role;
-        token.canCompare = (user as any).canCompare;
-        token.firstName = (user as any).firstName;
-        token.lastName = (user as any).lastName;
-        token.greeting = (user as any).greeting;
+        token.role = user.role;
+        token.canCompare = user.canCompare;
+        token.firstName = user.firstName;
+        token.lastName = user.lastName;
+        token.greeting = user.greeting ?? null;
       }
-      // Update session after profile change
       if (trigger === "update" && session) {
         if (session.greeting !== undefined) token.greeting = session.greeting;
         if (session.firstName) token.firstName = session.firstName;
@@ -92,12 +91,12 @@ export const authOptions: NextAuthOptions = {
     },
     async session({ session, token }) {
       if (session.user) {
-        (session.user as any).id = token.id;
-        (session.user as any).role = token.role;
-        (session.user as any).canCompare = token.canCompare;
-        (session.user as any).firstName = token.firstName;
-        (session.user as any).lastName = token.lastName;
-        (session.user as any).greeting = token.greeting;
+        session.user.id = token.id;
+        session.user.role = token.role;
+        session.user.canCompare = token.canCompare;
+        session.user.firstName = token.firstName;
+        session.user.lastName = token.lastName;
+        session.user.greeting = token.greeting ?? null;
       }
       return session;
     },
