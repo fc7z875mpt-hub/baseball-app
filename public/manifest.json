@@ -1,0 +1,10 @@
+{
+  "name": "Baseball Statistiky",
+  "short_name": "Baseball",
+  "description": "Statistiky mladeznickeho baseballoveho tymu",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f0f9ff",
+  "theme_color": "#1e3a5f",
+  "lang": "cs"
+}
