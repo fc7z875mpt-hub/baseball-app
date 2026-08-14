@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { DemoStatsButton } from "@/components/DemoStatsButton";
 
 type Tab = "users" | "teams" | "seasons" | "promote";
 type TeamRef = { id: string; name: string; shortName: string | null; primaryColor?: string };
@@ -84,7 +85,7 @@ export default function AdminPage() {
   useEffect(() => {
     if (authStatus === "unauthenticated") { router.push("/login"); return; }
     if (authStatus === "authenticated") {
-      if ((session?.user as any)?.role !== "ADMIN") { router.push("/dashboard"); return; }
+      if ((session?.user as { role?: string })?.role !== "ADMIN") { router.push("/dashboard"); return; }
       loadAll();
     }
   }, [authStatus, session, router]);
@@ -112,7 +113,7 @@ export default function AdminPage() {
       if (!res.ok) throw new Error(data.error || "Chyba");
       setPromoteList(data.players || []);
       setSkipIds(new Set());
-    } catch (e: any) { setError(e.message); }
+    } catch (e: unknown) { setError(e instanceof Error ? e.message : "Chyba"); }
   }
 
   useEffect(() => { if (tab === "promote") loadPromote(); }, [tab]);
@@ -138,7 +139,7 @@ export default function AdminPage() {
       body: JSON.stringify({ userId }),
     });
     const data = await res.json();
-    if (!res.ok) { setError(data.error || "Smazání selhalo"); return; }
+    if (!res.ok) { setError(data.error || "Smazání selhala"); return; }
     await loadAll();
   }
 
@@ -150,7 +151,7 @@ export default function AdminPage() {
       body: JSON.stringify({ name: teamForm.name, shortName: teamForm.shortName, primaryColor: teamForm.primaryColor, logoUrl: teamForm.logoUrl || null }),
     });
     const data = await res.json();
-    if (!res.ok) { setError(data.error || "Vytvoření týmu selhalo"); return; }
+    if (!res.ok) { setError(data.error || "Vytvoření týmu selhala"); return; }
     setTeamForm({ name: "", shortName: "", primaryColor: "#1e3a5f", logoUrl: "" });
     await loadAll();
   }
@@ -171,7 +172,7 @@ export default function AdminPage() {
       } else {
         setTeamForm((f) => ({ ...f, logoUrl: dataUrl }));
       }
-    } catch (e: any) { setError(e.message || "Chyba loga"); }
+    } catch (e: unknown) { setError(e instanceof Error ? e.message : "Chyba loga"); }
   }
 
   async function toggleTeam(id: string, isActive: boolean) {
@@ -191,7 +192,7 @@ export default function AdminPage() {
       body: JSON.stringify({ year: seasonYear, setActive: true }),
     });
     const data = await res.json();
-    if (!res.ok) { setError(data.error || "Vytvoření sezóny selhalo"); return; }
+    if (!res.ok) { setError(data.error || "Vytvoření sezóny selhala"); return; }
     await loadAll();
   }
 
@@ -281,6 +282,8 @@ export default function AdminPage() {
             <button onClick={() => signOut({ callbackUrl: "/login" })} className="rounded-lg border border-white/15 px-3 py-2 text-sm text-white/70 hover:bg-white/5">Odhlásit</button>
           </div>
         </div>
+
+        <DemoStatsButton />
 
         <div className="mb-6 flex flex-wrap gap-2">
           {tabs.map((t) => (
