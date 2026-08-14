@@ -1,59 +1,94 @@
-/** Ikony – musí být čitelné i v 16–20 px */
+/** Jednoduché stroke ikony – čitelné v malé velikosti */
 
-/** Baseballová pálka – šikmá silueta s rukojetí */
-export function IconBat({ size = 16 }: { size?: number }) {
+/** Baseballová pálka */
+export function IconBat({ size = 20 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden>
-      <g fill="currentColor">
-        {/* knoflík rukojeti */}
-        <circle cx="5" cy="19" r="2" />
-        {/* rukojeť + dřík (tlustá šikmá čára) */}
-        <path d="M5.8 17.8 15.2 7.2c.4-.4 1-.4 1.4 0l1.2 1.2c.4.4.4 1 0 1.4L8.4 19.2c-.4.4-1 .4-1.4 0l-1.2-1.2c-.4-.4-.4-1 0-1.4z" />
-        {/* hlava pálky (širší konec) */}
-        <path d="M15.5 6.5c1.8-1.8 4.5-1.5 5.5.2 1 1.6.2 4-1.5 5.2l-2.2-2.2c.6-.6 1-1.5.8-2.2-.2-.6-.7-1-1.3-1.2l-.8.2-1.5-.2z" />
-      </g>
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.4"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      {/* dřík */}
+      <line x1="5" y1="19" x2="16.5" y2="6.5" />
+      {/* hlava pálky */}
+      <path d="M15.5 5.5c1.8-1.5 4.2-.8 4.8 1.2.6 2-.8 3.8-2.6 4.5" />
+      {/* knoflík */}
+      <circle cx="4.5" cy="19.5" r="1.6" fill="currentColor" stroke="none" />
     </svg>
   );
 }
 
-/** Bota – boční pohled, jednoduchá silueta */
-export function IconRunner({ size = 16 }: { size?: number }) {
+/** Bota (boční pohled) */
+export function IconRunner({ size = 20 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden>
-      <g fill="currentColor">
-        {/* tělo boty */}
-        <path d="M3.5 14.2c0-.7.4-1.3 1-1.6l3.2-1.7c.4-.2.9-.2 1.3 0l1.6.9c.2.1.5.1.7 0l1.1-.6c.3-.2.7-.2 1 0l5.8 3.4c.9.5.9 1.8 0 2.4l-.5.3H5c-.8 0-1.5-.7-1.5-1.5v-1.6z" />
-        {/* nártek nahoru */}
-        <path d="M9 11.2 10.6 8.6c.3-.4.8-.5 1.2-.3l1.3.7-2.5 2.6-1.6-.4z" />
-        {/* podrážka */}
-        <path d="M4 17.8h14.8c.6 0 1.1.5 1.1 1.1 0 .2-.1.4-.3.5H4.3c-.4 0-.8-.4-.8-.8 0-.4.3-.8.7-.8h-.2z" />
-      </g>
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      {/* tvar boty */}
+      <path d="M3 15.5h1.5l2.5-3h3.5l1.5-2h3l6 4v2.5H4.5C3.7 17 3 16.3 3 15.5z" />
+      {/* podrážka */}
+      <path d="M3.5 17.5h15.5" />
+      {/* tkanička / nárt */}
+      <path d="M10 10.5 11.5 8.5" />
     </svg>
   );
 }
 
-/** Baseball – HR */
-export function IconHomeRun({ size = 16 }: { size?: number }) {
+/** Baseballový míček */
+export function IconHomeRun({ size = 20 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      aria-hidden
+    >
       <circle cx="12" cy="12" r="9" />
-      <path d="M8 5.2c1.2 2 1.8 4.2 1.8 6.8S9.2 16.8 8 18.8" strokeLinecap="round" />
-      <path d="M16 5.2c-1.2 2-1.8 4.2-1.8 6.8s.6 4.8 1.8 6.8" strokeLinecap="round" />
+      <path d="M8 5c1.2 2.2 1.8 4.5 1.8 7s-.6 4.8-1.8 7" />
+      <path d="M16 5c-1.2 2.2-1.8 4.5-1.8 7s.6 4.8 1.8 7" />
     </svg>
   );
 }
 
 /** Kalendář */
-export function IconGames({ size = 16 }: { size?: number }) {
+export function IconGames({ size = 20 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
       <rect x="3" y="5" width="18" height="16" rx="2" />
       <path d="M3 10h18M8 3v4M16 3v4" />
     </svg>
   );
 }
 
-/** Nastavení – ozubené kolo */
+/** Ozubené kolo */
 export function IconSettings({ size = 22 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden>

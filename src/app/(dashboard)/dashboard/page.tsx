@@ -179,14 +179,13 @@ export default function DashboardPage() {
         {child && (
           <section>
             <h2 className="mb-2.5 flex items-center gap-1.5 px-0.5 text-[11px] font-semibold uppercase tracking-wider text-white/45">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3v18h18" /><path d="m7 14 4-4 3 3 5-6" /></svg>
               Statistiky sezóny
             </h2>
             <div className="grid grid-cols-4 gap-2">
-              <StatTile label="Hity" value={child.stats.hits} color="text-sky-400" icon={<IconBat size={18} />} />
-              <StatTile label="Doběhy" value={child.stats.runs} color="text-emerald-400" icon={<IconRunner size={18} />} />
-              <StatTile label="HR" value={child.stats.homeRuns} color="text-red-400" icon={<IconHomeRun size={18} />} />
-              <StatTile label="Zápasy" value={child.stats.games} color="text-amber-400" icon={<IconGames size={18} />} />
+              <StatTile label="Hity" value={child.stats.hits} color="text-sky-400" icon={<IconBat size={22} />} />
+              <StatTile label="Doběhy" value={child.stats.runs} color="text-emerald-400" icon={<IconRunner size={22} />} />
+              <StatTile label="HR" value={child.stats.homeRuns} color="text-red-400" icon={<IconHomeRun size={22} />} />
+              <StatTile label="Zápasy" value={child.stats.games} color="text-amber-400" icon={<IconGames size={22} />} />
             </div>
           </section>
         )}
@@ -234,7 +233,7 @@ function MatchCard({ match }: { match: UpcomingMatch }) {
   const homeName = match.homeTeam.name;
   const showScore = match.status === "LIVE" || match.status === "FINISHED";
   return (
-    <Link href="/dashboard/matches" className="block overflow-hidden rounded-2xl border border-white/10 bg-[#0d1b2e]">
+    <Link href="/dashboard/matches" className="block overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04]">
       <div className="p-4">
         <div className="mb-3 flex items-center justify-between">
           <span className="text-[11px] font-semibold uppercase tracking-wider text-white/45">Příští zápas</span>
@@ -278,7 +277,7 @@ function StatTile({
   color: string;
 }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-[#0d1b2e] px-2 py-3 text-center">
+    <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-2 py-3 text-center">
       <div className={`mb-1 flex justify-center ${color}`}>{icon}</div>
       <p className={`text-xl font-bold tabular-nums ${color}`}>{value}</p>
       <p className="mt-0.5 text-[10px] text-white/40">{label}</p>
