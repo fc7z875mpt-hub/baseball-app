@@ -1,3 +1,2 @@
-import { LOGO_P1 } from "./logo_p1";
-import { LOGO_P2 } from "./logo_p2";
-export const LOGO_DATA_URL = "data:image/png;base64," + LOGO_P1 + LOGO_P2;
+// Logo je inline SVG v components/DiamondLogo.tsx – tento soubor už se nepoužívá.
+export const LOGO_DATA_URL = "";
