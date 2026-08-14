@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
 
+const MAX_LOGO_CHARS = 400_000; // ~300 KB base64
+
 export async function GET() {
   const session = await requireAdmin();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -27,6 +29,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Název týmu je povinný (min. 2 znaky)" }, { status: 400 });
   }
 
+  if (logoUrl && String(logoUrl).length > MAX_LOGO_CHARS) {
+    return NextResponse.json({ error: "Logo je příliš velké (max. cca 250 KB)" }, { status: 400 });
+  }
+
   const team = await prisma.team.create({
     data: {
       name: name.trim(),
@@ -46,9 +52,14 @@ export async function PATCH(req: NextRequest) {
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json();
-  const { id, name, shortName, primaryColor, secondaryColor, backgroundColor, logoUrl, isActive } = body;
+  const { id, name, shortName, primaryColor, secondaryColor, backgroundColor, logoUrl, isActive } =
+    body;
 
   if (!id) return NextResponse.json({ error: "Chybí id týmu" }, { status: 400 });
+
+  if (logoUrl && String(logoUrl).length > MAX_LOGO_CHARS) {
+    return NextResponse.json({ error: "Logo je příliš velké (max. cca 250 KB)" }, { status: 400 });
+  }
 
   const team = await prisma.team.update({
     where: { id },
@@ -58,7 +69,7 @@ export async function PATCH(req: NextRequest) {
       ...(primaryColor !== undefined && { primaryColor }),
       ...(secondaryColor !== undefined && { secondaryColor }),
       ...(backgroundColor !== undefined && { backgroundColor }),
-      ...(logoUrl !== undefined && { logoUrl }),
+      ...(logoUrl !== undefined && { logoUrl: logoUrl || null }),
       ...(isActive !== undefined && { isActive: Boolean(isActive) }),
     },
   });

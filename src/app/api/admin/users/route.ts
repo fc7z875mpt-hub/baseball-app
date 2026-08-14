@@ -1,15 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { requireAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
-
-async function requireAdmin() {
-  const session = await getServerSession(authOptions);
-  if (!session?.user || (session.user as any).role !== "ADMIN") {
-    return null;
-  }
-  return session;
-}
 
 export async function GET() {
   const session = await requireAdmin();
@@ -33,6 +24,14 @@ export async function GET() {
           firstName: true,
           lastName: true,
           category: true,
+          teams: {
+            where: { isActive: true },
+            select: {
+              team: {
+                select: { id: true, name: true, shortName: true, primaryColor: true },
+              },
+            },
+          },
         },
       },
     },

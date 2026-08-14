@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin, nextCategory } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
 
-/** GET – náhled: kdo by postoupil kam */
 export async function GET() {
   const session = await requireAdmin();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -15,25 +14,30 @@ export async function GET() {
       lastName: true,
       category: true,
       parent: { select: { firstName: true, lastName: true, status: true } },
+      teams: {
+        where: { isActive: true },
+        select: {
+          team: {
+            select: { id: true, name: true, shortName: true },
+          },
+        },
+      },
     },
   });
 
   const preview = players.map((p) => ({
-    ...p,
+    id: p.id,
+    firstName: p.firstName,
+    lastName: p.lastName,
+    category: p.category,
     suggestedCategory: nextCategory(p.category),
+    parent: p.parent,
+    teams: p.teams.map((t) => t.team),
   }));
 
   return NextResponse.json({ players: preview });
 }
 
-/**
- * POST – hromadný postup
- * body: {
- *   year: number,
- *   seasonName?: string,
- *   promotions: { playerId: string, newCategory: string, skip?: boolean }[]
- * }
- */
 export async function POST(req: NextRequest) {
   const session = await requireAdmin();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -49,7 +53,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Chybí year nebo promotions" }, { status: 400 });
   }
 
-  // Deactivate old seasons, create new active season
   await prisma.season.updateMany({ data: { isActive: false } });
 
   const season = await prisma.season.create({
