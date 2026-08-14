@@ -17,6 +17,7 @@ enum RegistrationStatus {
   PENDING
   APPROVED
   REJECTED
+  SUSPENDED
 }
 
 enum MatchStatus {
@@ -135,7 +136,7 @@ model Player {
   birthYear    Int?
   category     String?
   parentId     String?
-  parent       User?             @relation(fields: [parentId], references: [id])
+  parent       User?             @relation(fields: [parentId], references: [id], onDelete: Cascade)
   createdAt    DateTime          @default(now())
   updatedAt    DateTime          @updatedAt
   teams        PlayerTeam[]

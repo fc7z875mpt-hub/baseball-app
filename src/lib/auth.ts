@@ -43,6 +43,10 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Registrace byla zamítnuta");
         }
 
+        if (user.status === "SUSPENDED") {
+          throw new Error("Účet byl pozastaven. Kontaktujte administrátora.");
+        }
+
         if (!user.passwordHash) {
           throw new Error("Neplatný e-mail nebo heslo");
         }

@@ -17,6 +17,7 @@ export async function GET() {
       lastName: true,
       role: true,
       status: true,
+      canCompare: true,
       createdAt: true,
       players: {
         select: {
@@ -47,19 +48,26 @@ export async function PATCH(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { userId, status, role } = body as {
+  const { userId, status, role, canCompare } = body as {
     userId: string;
-    status?: "APPROVED" | "REJECTED" | "PENDING";
+    status?: "APPROVED" | "REJECTED" | "PENDING" | "SUSPENDED";
     role?: "PARENT" | "ORGANIZER" | "ADMIN";
+    canCompare?: boolean;
   };
 
   if (!userId) {
     return NextResponse.json({ error: "Chybí userId" }, { status: 400 });
   }
 
-  const data: Record<string, string> = {};
+  // Prevent admin from suspending/deleting themselves via status
+  if ((session.user as any).id === userId && status === "SUSPENDED") {
+    return NextResponse.json({ error: "Nelze pozastavit vlastní účet" }, { status: 400 });
+  }
+
+  const data: Record<string, unknown> = {};
   if (status) data.status = status;
   if (role) data.role = role;
+  if (typeof canCompare === "boolean") data.canCompare = canCompare;
 
   const user = await prisma.user.update({
     where: { id: userId },
@@ -71,8 +79,40 @@ export async function PATCH(req: NextRequest) {
       lastName: true,
       role: true,
       status: true,
+      canCompare: true,
     },
   });
 
   return NextResponse.json({ user });
+}
+
+export async function DELETE(req: NextRequest) {
+  const session = await requireAdmin();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const body = await req.json();
+  const { userId } = body as { userId: string };
+
+  if (!userId) {
+    return NextResponse.json({ error: "Chybí userId" }, { status: 400 });
+  }
+
+  if ((session.user as any).id === userId) {
+    return NextResponse.json({ error: "Nelze smazat vlastní účet" }, { status: 400 });
+  }
+
+  const target = await prisma.user.findUnique({ where: { id: userId } });
+  if (!target) {
+    return NextResponse.json({ error: "Uživatel neexistuje" }, { status: 404 });
+  }
+  if (target.role === "ADMIN") {
+    return NextResponse.json({ error: "Nelze smazat admin účet" }, { status: 400 });
+  }
+
+  // Cascade: players → playerTeams, stats; sessions, accounts
+  await prisma.user.delete({ where: { id: userId } });
+
+  return NextResponse.json({ ok: true, message: "Uživatel a související data smazána" });
 }
