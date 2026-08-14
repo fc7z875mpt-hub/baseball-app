@@ -19,13 +19,7 @@ type PlayerCard = {
     primaryColor: string;
     logoUrl?: string | null;
   } | null;
-  stats: {
-    games: number;
-    hits: number;
-    runs: number;
-    homeRuns: number;
-    avg: number | null;
-  };
+  stats: { games: number; hits: number; runs: number; homeRuns: number; avg: number | null };
 };
 
 type TeamInfo = {
@@ -94,38 +88,26 @@ export default function DashboardPage() {
 
   if (status === "loading" || loading) {
     return (
-      <main className="flex min-h-screen items-center justify-center text-white/50">
-        Načítám…
-      </main>
+      <main className="flex min-h-screen items-center justify-center text-white/50">Načítám…</main>
     );
   }
 
-  const user = session?.user as {
-    firstName?: string;
-    name?: string;
-    role?: string;
-    greeting?: string;
-  };
+  const user = session?.user as { firstName?: string; name?: string; role?: string; greeting?: string };
   const isAdmin = user?.role === "ADMIN";
   const isStaff = user?.role === "ORGANIZER" || isAdmin;
   const child = players[0];
   const nextMatch = matches[0];
   const team = child?.team;
-  const displayName =
-    greeting || user?.greeting || user?.firstName || user?.name || "rodiči";
+  const displayName = greeting || user?.greeting || user?.firstName || user?.name || "rodiči";
 
   if (isStaff) {
     return (
       <main className="px-4 pt-6">
         <div className="mx-auto max-w-lg space-y-5">
-          <header>
-            <h1 className="text-2xl font-bold">Ahoj, {displayName} 👋</h1>
-          </header>
+          <h1 className="text-2xl font-bold">Ahoj, {displayName} 👋</h1>
           {nextMatch && <MatchCard match={nextMatch} />}
           <section className="space-y-2">
-            <h2 className="px-0.5 text-[11px] font-semibold uppercase tracking-wider text-white/40">
-              Rychlé akce
-            </h2>
+            <h2 className="px-0.5 text-[11px] font-semibold uppercase tracking-wider text-white/40">Rychlé akce</h2>
             <Link href="/dashboard/score" className="flex items-center gap-3 rounded-2xl border border-sky-500/25 bg-sky-600/10 p-4">
               <span className="text-xl">✎</span>
               <div>
@@ -159,13 +141,16 @@ export default function DashboardPage() {
     <main className="px-4 pt-5">
       <div className="mx-auto max-w-lg space-y-5">
         <header className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 min-w-0">
             <TeamBadge name={team?.name || "Tým"} color={team?.primaryColor || "#1e40af"} logoUrl={team?.logoUrl} size={44} />
-            <div>
-              <p className="text-sm font-bold leading-tight">{team?.shortName || team?.name || "Můj tým"}</p>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-bold leading-tight">{team?.name || "Můj tým"}</p>
+              {team?.shortName && (
+                <p className="text-[11px] uppercase tracking-wide text-white/40">{team.shortName}</p>
+              )}
             </div>
           </div>
-          <button type="button" className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 text-white/50" aria-label="Oznámení">
+          <button type="button" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/10 text-white/50" aria-label="Oznámení">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" /><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" /></svg>
           </button>
         </header>
@@ -174,13 +159,16 @@ export default function DashboardPage() {
           <h1 className="text-2xl font-bold tracking-tight">Ahoj, {displayName} 👋</h1>
           {child && (
             <p className="mt-0.5 text-sm text-white/45">
-              {child.firstName} {child.lastName}{child.category ? ` · ${child.category}` : ""}
+              {child.firstName} {child.lastName}
+              {child.category ? ` · ${child.category}` : ""}
             </p>
           )}
         </div>
 
         <section>
-          {nextMatch ? <MatchCard match={nextMatch} /> : (
+          {nextMatch ? (
+            <MatchCard match={nextMatch} />
+          ) : (
             <div className="rounded-2xl border border-dashed border-white/15 px-4 py-8 text-center text-sm text-white/40">
               Zatím žádný naplánovaný zápas
             </div>
@@ -190,13 +178,42 @@ export default function DashboardPage() {
         {child && (
           <section>
             <h2 className="mb-2.5 flex items-center gap-1.5 px-0.5 text-[11px] font-semibold uppercase tracking-wider text-white/45">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3v18h18" /><path d="m7 14 4-4 3 3 5-6" /></svg>
               Statistiky sezóny
             </h2>
             <div className="grid grid-cols-4 gap-2">
-              <StatTile label="Hity" value={child.stats.hits} />
-              <StatTile label="Doběhy" value={child.stats.runs} />
-              <StatTile label="HR" value={child.stats.homeRuns} />
-              <StatTile label="Zápasy" value={child.stats.games} />
+              <StatTile
+                label="Hity"
+                value={child.stats.hits}
+                color="text-sky-400"
+                icon={
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m14 4 6 6-8 8-6-6Z" /><path d="m4 14 6 6" /></svg>
+                }
+              />
+              <StatTile
+                label="Doběhy"
+                value={child.stats.runs}
+                color="text-emerald-400"
+                icon={
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="5" r="2" /><path d="M12 7v5l3 3" /><path d="m9 15 3 6 3-6" /></svg>
+                }
+              />
+              <StatTile
+                label="HR"
+                value={child.stats.homeRuns}
+                color="text-red-400"
+                icon={
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="9" /><path d="M12 3c2 3 2 6 0 9s-2 6 0 9" /><path d="M3 12h18" /></svg>
+                }
+              />
+              <StatTile
+                label="Zápasy"
+                value={child.stats.games}
+                color="text-amber-400"
+                icon={
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></svg>
+                }
+              />
             </div>
           </section>
         )}
@@ -227,7 +244,10 @@ export default function DashboardPage() {
 
 function TeamBadge({ name, color, logoUrl, size = 40 }: { name: string; color: string; logoUrl?: string | null; size?: number }) {
   if (logoUrl) {
-    return <img src={logoUrl} alt={name} width={size} height={size} className="rounded-full object-cover ring-2 ring-white/10" style={{ width: size, height: size }} />;
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img src={logoUrl} alt={name} width={size} height={size} className="rounded-full object-cover ring-2 ring-white/10" style={{ width: size, height: size }} />
+    );
   }
   return (
     <div className="flex items-center justify-center rounded-full text-sm font-bold text-white ring-2 ring-white/10" style={{ width: size, height: size, backgroundColor: color || "#1e40af" }}>
@@ -237,8 +257,8 @@ function TeamBadge({ name, color, logoUrl, size = 40 }: { name: string; color: s
 }
 
 function MatchCard({ match }: { match: UpcomingMatch }) {
-  const awayName = match.awayTeam?.shortName || match.awayTeam?.name || match.opponent;
-  const homeName = match.homeTeam.shortName || match.homeTeam.name;
+  const awayName = match.awayTeam?.name || match.opponent;
+  const homeName = match.homeTeam.name;
   const showScore = match.status === "LIVE" || match.status === "FINISHED";
   return (
     <Link href="/dashboard/matches" className="block overflow-hidden rounded-2xl border border-white/10 bg-[#0d1b2e]">
@@ -248,44 +268,61 @@ function MatchCard({ match }: { match: UpcomingMatch }) {
           <StatusPill status={match.status} />
         </div>
         <p className="mb-4 text-base font-bold">
-          {formatMatchDate(match.date)}{match.time ? ` ${match.time}` : ""}
+          {formatMatchDate(match.date)}
+          {match.time ? ` ${match.time}` : ""}
           <span className="font-normal text-white/40"> · vs. {match.opponent}</span>
         </p>
         <div className="flex items-center justify-between gap-2">
           <div className="flex flex-1 flex-col items-center gap-1.5">
             <TeamBadge name={homeName} color={match.homeTeam.primaryColor} logoUrl={match.homeTeam.logoUrl} size={52} />
             <p className="text-lg font-bold tabular-nums">{showScore ? match.homeScore : "–"}</p>
-            <p className="max-w-[90px] truncate text-center text-[11px] text-white/50">{homeName}</p>
+            <p className="max-w-[100px] truncate text-center text-[11px] text-white/50">{homeName}</p>
           </div>
           <span className="text-sm font-bold text-white/30">VS</span>
           <div className="flex flex-1 flex-col items-center gap-1.5">
             <TeamBadge name={awayName} color={match.awayTeam?.primaryColor || "#7f1d1d"} logoUrl={match.awayTeam?.logoUrl} size={52} />
             <p className="text-lg font-bold tabular-nums">{showScore ? match.awayScore : "–"}</p>
-            <p className="max-w-[90px] truncate text-center text-[11px] text-white/50">{awayName}</p>
+            <p className="max-w-[100px] truncate text-center text-[11px] text-white/50">{awayName}</p>
           </div>
         </div>
         {match.location && (
-          <div className="mt-4 flex items-center gap-1.5 border-t border-white/5 pt-3 text-xs text-white/40">
-            📍 {match.location}
-          </div>
+          <div className="mt-4 flex items-center gap-1.5 border-t border-white/5 pt-3 text-xs text-white/40">📍 {match.location}</div>
         )}
       </div>
     </Link>
   );
 }
 
-function StatTile({ label, value }: { label: string; value: number }) {
+function StatTile({
+  label,
+  value,
+  icon,
+  color,
+}: {
+  label: string;
+  value: number;
+  icon: React.ReactNode;
+  color: string;
+}) {
   return (
     <div className="rounded-2xl border border-white/10 bg-[#0d1b2e] px-2 py-3 text-center">
-      <p className="text-xl font-bold tabular-nums text-white">{value}</p>
+      <div className={`mb-1 flex justify-center ${color}`}>{icon}</div>
+      <p className={`text-xl font-bold tabular-nums ${color}`}>{value}</p>
       <p className="mt-0.5 text-[10px] text-white/40">{label}</p>
     </div>
   );
 }
 
 function StatusPill({ status }: { status: string }) {
-  if (status === "LIVE") return <span className="flex items-center gap-1.5 rounded-full bg-red-500/15 px-2.5 py-0.5 text-[10px] font-bold text-red-400"><span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-500" />Živě</span>;
-  if (status === "FINISHED") return <span className="rounded-full bg-white/10 px-2.5 py-0.5 text-[10px] font-bold text-white/50">Ukončený</span>;
+  if (status === "LIVE")
+    return (
+      <span className="flex items-center gap-1.5 rounded-full bg-red-500/15 px-2.5 py-0.5 text-[10px] font-bold text-red-400">
+        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-500" />
+        Živě
+      </span>
+    );
+  if (status === "FINISHED")
+    return <span className="rounded-full bg-white/10 px-2.5 py-0.5 text-[10px] font-bold text-white/50">Ukončený</span>;
   return <span className="rounded-full bg-sky-500/15 px-2.5 py-0.5 text-[10px] font-bold text-sky-400">Plánovaný</span>;
 }
 
