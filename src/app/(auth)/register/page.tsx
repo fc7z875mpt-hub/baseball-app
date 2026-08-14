@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { DiamondLogo } from "@/components/DiamondLogo";
 
 const CATEGORIES = ["U8", "U9", "U10", "U11", "U12", "U13", "U15", "U18"];
+
+type TeamOption = { id: string; name: string; shortName: string | null };
 
 export default function RegisterPage() {
   const [form, setForm] = useState({
@@ -15,10 +17,19 @@ export default function RegisterPage() {
     childFirstName: "",
     childLastName: "",
     category: "",
+    teamId: "",
   });
+  const [teams, setTeams] = useState<TeamOption[]>([]);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/teams")
+      .then((r) => r.json())
+      .then((d) => setTeams(d.teams || []))
+      .catch(() => {});
+  }, []);
 
   function update(field: string, value: string) {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -30,6 +41,10 @@ export default function RegisterPage() {
 
     if (!form.category) {
       setError("Vyberte kategorii dítěte");
+      return;
+    }
+    if (!form.teamId) {
+      setError("Vyberte tým");
       return;
     }
 
@@ -46,7 +61,7 @@ export default function RegisterPage() {
           childFirstName: form.childFirstName,
           childLastName: form.childLastName,
           category: form.category,
-          teamIds: ["placeholder"],
+          teamIds: [form.teamId],
         }),
       });
       const data = await res.json();
@@ -177,19 +192,36 @@ export default function RegisterPage() {
             required
             className={`${inputClass} appearance-none`}
           >
-            <option value="" disabled className="bg-[#0a1628] text-white/50">
+            <option value="" disabled className="bg-[#0a1628]">
               Kategorie (U8–U18)
             </option>
             {CATEGORIES.map((cat) => (
-              <option key={cat} value={cat} className="bg-[#0a1628] text-white">
+              <option key={cat} value={cat} className="bg-[#0a1628]">
                 {cat}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={form.teamId}
+            onChange={(e) => update("teamId", e.target.value)}
+            required
+            className={`${inputClass} appearance-none`}
+          >
+            <option value="" disabled className="bg-[#0a1628]">
+              {teams.length === 0 ? "Zatím žádné týmy – založí admin" : "Vyberte tým"}
+            </option>
+            {teams.map((t) => (
+              <option key={t.id} value={t.id} className="bg-[#0a1628]">
+                {t.name}
+                {t.shortName ? ` (${t.shortName})` : ""}
               </option>
             ))}
           </select>
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || teams.length === 0}
             className="mt-2 w-full rounded-xl bg-red-600 py-3.5 text-base font-semibold text-white transition hover:bg-red-500 disabled:opacity-50"
           >
             {loading ? "Odesílám…" : "Registrovat se"}

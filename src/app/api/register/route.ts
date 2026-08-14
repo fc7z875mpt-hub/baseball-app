@@ -36,9 +36,23 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Ověř že týmy existují a jsou aktivní
+    const teams = await prisma.team.findMany({
+      where: { id: { in: data.teamIds }, isActive: true },
+    });
+    if (teams.length === 0) {
+      return NextResponse.json(
+        { error: "Vyberte platný tým" },
+        { status: 400 }
+      );
+    }
+
     const passwordHash = await bcrypt.hash(data.password, 12);
 
-    // Zatím bez vazby na tým (placeholder) – týmy založí admin
+    const activeSeason = await prisma.season.findFirst({
+      where: { isActive: true },
+    });
+
     const user = await prisma.user.create({
       data: {
         email: data.email.toLowerCase(),
@@ -52,6 +66,13 @@ export async function POST(req: NextRequest) {
             firstName: data.childFirstName,
             lastName: data.childLastName,
             category: data.category,
+            teams: {
+              create: teams.map((t) => ({
+                teamId: t.id,
+                seasonId: activeSeason?.id ?? null,
+                isActive: true,
+              })),
+            },
           },
         },
       },
