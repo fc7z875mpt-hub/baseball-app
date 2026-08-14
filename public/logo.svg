@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+  <!-- diamond frame - silver/gray -->
+  <path d="M100 18 L178 100 L100 182 L22 100 Z" stroke="#c5cdd6" stroke-width="10" stroke-linejoin="round" fill="none"/>
+  <!-- baseball -->
+  <circle cx="100" cy="100" r="42" fill="#ffffff"/>
+  <!-- red stitching left (curved with stitches) -->
+  <path d="M78 72 Q98 100 78 128" stroke="#e11d2e" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+  <path d="M72 78 Q88 100 72 122" stroke="#e11d2e" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+  <!-- stitch marks left -->
+  <path d="M74 82 L80 85 M73 90 L80 92 M73 100 L80 100 M73 110 L80 112 M74 118 L80 115" stroke="#e11d2e" stroke-width="1.8" stroke-linecap="round"/>
+  <!-- red stitching right -->
+  <path d="M122 72 Q102 100 122 128" stroke="#e11d2e" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+  <path d="M128 78 Q112 100 128 122" stroke="#e11d2e" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+  <!-- stitch marks right -->
+  <path d="M126 82 L120 85 M127 90 L120 92 M127 100 L120 100 M127 110 L120 112 M126 118 L120 115" stroke="#e11d2e" stroke-width="1.8" stroke-linecap="round"/>
+</svg>

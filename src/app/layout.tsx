@@ -4,7 +4,8 @@ import { Providers } from "@/components/Providers";
 
 export const metadata: Metadata = {
   title: "Diamond Youth – Czech Youth Baseball",
-  description: "Aplikace pro mládežnické baseballové týmy – statistiky, živý zápis zápasů a správa hráčů",
+  description:
+    "Aplikace pro mládežnické baseballové týmy – statistiky, živý zápis zápasů a správa hráčů",
   manifest: "/manifest.json",
   icons: {
     icon: [
@@ -38,7 +39,10 @@ export default function RootLayout({
       <head>
         <link rel="apple-touch-icon" href="/api/icon/180" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta
+          name="apple-mobile-web-app-status-bar-style"
+          content="black-translucent"
+        />
       </head>
       <body className="antialiased">
         <Providers>{children}</Providers>

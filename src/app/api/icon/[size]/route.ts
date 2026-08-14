@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ICON_180_B64, ICON_192_B64, ICON_32_B64 } from "@/lib/logo-assets";
+import {
+  ICON_32_B64,
+  ICON_180_B64,
+  ICON_192_B64,
+  ICON_512_B64,
+} from "@/lib/logo-assets";
 
 const MAP: Record<string, string> = {
   "32": ICON_32_B64,
   "180": ICON_180_B64,
   "192": ICON_192_B64,
-  "512": ICON_192_B64,
+  "512": ICON_512_B64,
 };
 
 export async function GET(
