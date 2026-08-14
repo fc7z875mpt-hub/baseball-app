@@ -42,7 +42,7 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: "Chybí playerId" }, { status: 400 });
   }
 
-  if (action === "updateCategory" || category) {
+  if (action === "updateCategory" || (category && !action)) {
     if (!category) {
       return NextResponse.json({ error: "Chybí kategorie" }, { status: 400 });
     }
@@ -58,36 +58,30 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: "Chybí teamId" }, { status: 400 });
     }
 
-    // deactivate previous links for same team+season if needed, then create
-    const link = await prisma.playerTeam.upsert({
+    const existing = await prisma.playerTeam.findFirst({
       where: {
-        playerId_teamId_seasonId: {
-          playerId,
-          teamId,
-          seasonId: seasonId || "",
-        },
+        playerId,
+        teamId,
+        seasonId: seasonId || null,
       },
-      create: {
+    });
+
+    if (existing) {
+      const link = await prisma.playerTeam.update({
+        where: { id: existing.id },
+        data: { isActive: true },
+      });
+      return NextResponse.json({ link });
+    }
+
+    const link = await prisma.playerTeam.create({
+      data: {
         playerId,
         teamId,
         seasonId: seasonId || null,
         isActive: true,
       },
-      update: {
-        isActive: true,
-      },
-    }).catch(async () => {
-      // unique constraint with null seasonId can be tricky – fallback create
-      return prisma.playerTeam.create({
-        data: {
-          playerId,
-          teamId,
-          seasonId: seasonId || null,
-          isActive: true,
-        },
-      });
     });
-
     return NextResponse.json({ link });
   }
 
