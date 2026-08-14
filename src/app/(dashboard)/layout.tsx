@@ -27,7 +27,7 @@ export default function DashboardLayout({
   }, [session, role]);
 
   return (
-    <div className="min-h-screen bg-[#070f1c] text-white">
+    <div className="min-h-screen bg-[#0a1628] text-white">
       <div className="pb-24">{children}</div>
       {session && <BottomNav role={role} playerHref={playerHref} />}
     </div>

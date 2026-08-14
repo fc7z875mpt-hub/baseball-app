@@ -1,25 +1,34 @@
-/** Ikony – čisté siluety dle mockupu */
+/** Ikony – pálka, bota, míček, kalendář, nastavení */
 
-/** Baseballová pálka */
+/** Baseballová pálka – čistá silueta */
 export function IconBat({ size = 16 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-      <path d="M19.78 2.87a2.25 2.25 0 0 0-3.18 0L5.4 14.07a.75.75 0 0 0-.18.3l-1.4 4.2a.75.75 0 0 0 .95.95l4.2-1.4a.75.75 0 0 0 .3-.18L20.47 6.74a2.25 2.25 0 0 0 0-3.18l-.69-.69Zm-2.12 1.06c.29-.3.77-.3 1.06 0l.69.69c.29.29.29.77 0 1.06L8.9 15.5l-2.12.71.71-2.12 10.17-10.16Z" />
-      <path d="M4.06 18.56 3 21l2.44-1.06-1.38-1.38Z" />
+      {/* hlava + tělo pálky */}
+      <path d="M21.07 2.93a2.5 2.5 0 0 0-3.54 0L6.4 14.06l-.9 3.04 3.04-.9L21.07 6.47a2.5 2.5 0 0 0 0-3.54z" />
+      {/* rukojeť */}
+      <path d="M5.2 15.3 3.5 20.5l5.2-1.7-3.5-3.5z" />
+      {/* knoflík */}
+      <circle cx="3.3" cy="20.7" r="1.4" />
     </svg>
   );
 }
 
-/** Běžící postavička – Material directions_run */
+/** Bota / kopačka – doběhy */
 export function IconRunner({ size = 16 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-      <path d="M13.49 5.48c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2Zm-3.6 13.9 1.8-8 2.1 2v6h2v-7.5l-2.1-2 .6-3C15.26 9 17.25 10 19.5 10v-2c-1.86 0-3.47-.99-4.33-2.45l-1-1.59c-.4-.62-1.08-1-1.83-1-.23 0-.47.04-.69.12L6 8.28V13h2V9.58l1.89-.73z" />
+      {/* podrážka + tělo boty (boční pohled) */}
+      <path d="M3 15.5c0-1 .5-1.9 1.3-2.4l3.8-2.3c.6-.35 1.3-.35 1.9 0l1.5.9c.25.15.55.15.8 0l1.3-.75c.5-.3 1.1-.3 1.6 0l5.5 3.2c1.2.7 1.2 2.4 0 3.1l-.8.45H4.8c-1 0-1.8-.85-1.8-1.9v-.3z" />
+      {/* jazyk / nárt */}
+      <path d="M9.2 11.2 11 8.8c.35-.45.95-.55 1.45-.25l1.1.7-2.8 2.5-1.55-.55z" opacity="0.9" />
+      {/* podrážka dole */}
+      <path d="M4 18.2h14.5c.7 0 1.3.6 1.3 1.3 0 .2-.15.4-.35.45H4.4c-.5 0-.9-.4-.9-.9 0-.45.35-.85.85-.85h-.35z" />
     </svg>
   );
 }
 
-/** Baseballový míček */
+/** Baseballový míček – HR (beze změny stylu) */
 export function IconHomeRun({ size = 16 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
@@ -29,6 +38,7 @@ export function IconHomeRun({ size = 16 }: { size?: number }) {
   );
 }
 
+/** Kalendář – zápasy */
 export function IconGames({ size = 16 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
