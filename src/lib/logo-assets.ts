@@ -1,6 +1,5 @@
-// Ikony se servírují ze static SVG / public
-// Ponecháno kvůli importům v api/icon route – fallback na prázdné
-export const ICON_32_B64 = "";
-export const ICON_180_B64 = "";
-export const ICON_192_B64 = "";
-export const ICON_512_B64 = "";
+export { LOGO_DATA_URL } from "./icons/logo";
+export { ICON_32_B64 } from "./icons/icon32";
+export { ICON_180_B64 } from "./icons/icon180";
+export { ICON_192_B64 } from "./icons/icon192";
+export { ICON_192_B64 as ICON_512_B64 } from "./icons/icon192";
