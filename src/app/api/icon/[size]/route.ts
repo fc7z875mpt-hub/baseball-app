@@ -1,32 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-  ICON_32_B64,
-  ICON_180_B64,
-  ICON_192_B64,
-  ICON_512_B64,
-} from "@/lib/logo-assets";
+import { readFile } from "fs/promises";
+import path from "path";
 
-const MAP: Record<string, string> = {
-  "32": ICON_32_B64,
-  "180": ICON_180_B64,
-  "192": ICON_192_B64,
-  "512": ICON_512_B64,
-};
-
+/** Redirect na SVG favicon – funguje na moderním iOS i v prohlížeči */
 export async function GET(
   _req: NextRequest,
   ctx: { params: Promise<{ size: string }> }
 ) {
-  const { size } = await ctx.params;
-  const b64 = MAP[size];
-  if (!b64) {
+  try {
+    const filePath = path.join(process.cwd(), "public", "favicon.svg");
+    const buf = await readFile(filePath);
+    return new NextResponse(buf, {
+      headers: {
+        "Content-Type": "image/svg+xml",
+        "Cache-Control": "public, max-age=31536000, immutable",
+      },
+    });
+  } catch {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
-  const buf = Buffer.from(b64, "base64");
-  return new NextResponse(buf, {
-    headers: {
-      "Content-Type": "image/png",
-      "Cache-Control": "public, max-age=31536000, immutable",
-    },
-  });
 }
