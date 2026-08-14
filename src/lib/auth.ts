@@ -68,18 +68,25 @@ export const authOptions: NextAuthOptions = {
           canCompare: user.canCompare,
           firstName: user.firstName,
           lastName: user.lastName,
+          greeting: user.greeting,
         };
       },
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
       if (user) {
         token.id = user.id;
         token.role = (user as any).role;
         token.canCompare = (user as any).canCompare;
         token.firstName = (user as any).firstName;
         token.lastName = (user as any).lastName;
+        token.greeting = (user as any).greeting;
+      }
+      // Update session after profile change
+      if (trigger === "update" && session) {
+        if (session.greeting !== undefined) token.greeting = session.greeting;
+        if (session.firstName) token.firstName = session.firstName;
       }
       return token;
     },
@@ -90,6 +97,7 @@ export const authOptions: NextAuthOptions = {
         (session.user as any).canCompare = token.canCompare;
         (session.user as any).firstName = token.firstName;
         (session.user as any).lastName = token.lastName;
+        (session.user as any).greeting = token.greeting;
       }
       return session;
     },

@@ -46,6 +46,7 @@ model User {
   passwordHash        String
   firstName           String
   lastName            String
+  greeting            String?
   role                Role                 @default(PARENT)
   status              RegistrationStatus   @default(PENDING)
   canCompare          Boolean              @default(false)
