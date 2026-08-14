@@ -15,14 +15,13 @@ export async function GET() {
       return NextResponse.json({ error: "Nepřihlášen" }, { status: 401 });
     }
 
-    const userId = (session.user as { id?: string }).id;
-    const role = (session.user as { role?: string }).role;
+    const userId = session.user.id;
+    const role = session.user.role;
 
     if (!userId) {
       return NextResponse.json({ error: "Nepřihlášen" }, { status: 401 });
     }
 
-    // Staff má jiné nástroje – tady jen rodičovské děti
     if (role === "ADMIN" || role === "ORGANIZER") {
       return NextResponse.json({
         players: [],

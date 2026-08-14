@@ -59,8 +59,7 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: "Chybí userId" }, { status: 400 });
   }
 
-  // Prevent admin from suspending/deleting themselves via status
-  if ((session.user as any).id === userId && status === "SUSPENDED") {
+  if (session.user.id === userId && status === "SUSPENDED") {
     return NextResponse.json({ error: "Nelze pozastavit vlastní účet" }, { status: 400 });
   }
 
@@ -99,7 +98,7 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: "Chybí userId" }, { status: 400 });
   }
 
-  if ((session.user as any).id === userId) {
+  if (session.user.id === userId) {
     return NextResponse.json({ error: "Nelze smazat vlastní účet" }, { status: 400 });
   }
 
@@ -111,7 +110,6 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: "Nelze smazat admin účet" }, { status: 400 });
   }
 
-  // Cascade: players → playerTeams, stats; sessions, accounts
   await prisma.user.delete({ where: { id: userId } });
 
   return NextResponse.json({ ok: true, message: "Uživatel a související data smazána" });

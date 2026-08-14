@@ -8,7 +8,7 @@ import Link from "next/link";
 export default function ScorePage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const role = (session?.user as { role?: string } | undefined)?.role;
+  const role = session?.user?.role;
   const allowed = role === "ORGANIZER" || role === "ADMIN";
 
   useEffect(() => {
@@ -45,10 +45,9 @@ export default function ScorePage() {
 
         <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-center">
           <p className="text-4xl">✎</p>
-          <p className="mt-3 font-semibold">Připravujeme (fáze 4)</p>
+          <p className="mt-3 font-semibold">Připravujeme (fáze 3)</p>
           <p className="mt-2 text-sm text-white/45">
-            Vytvoření zápasu, sestavy, směny, outy a automatické statistiky – dle
-            zadání 4.4–4.5.
+            Vytvoření zápasu, sestavy, směny, outy a automatické statistiky.
           </p>
           <Link
             href="/dashboard/matches"

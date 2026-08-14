@@ -1,13 +1,14 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "./auth";
-import { NextResponse } from "next/server";
+import type { Session } from "next-auth";
 
-export async function requireAdmin() {
+/** Vrátí session admina, nebo null. */
+export async function requireAdmin(): Promise<Session | null> {
   const session = await getServerSession(authOptions);
   if (!session?.user || session.user.role !== "ADMIN") {
-    return { error: NextResponse.json({ error: "Forbidden" }, { status: 403 }) };
+    return null;
   }
-  return { session };
+  return session;
 }
 
 const CATEGORY_ORDER = ["U7", "U8", "U9", "U10", "U11", "U12", "U13", "U15", "U18"] as const;
