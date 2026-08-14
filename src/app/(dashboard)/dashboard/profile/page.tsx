@@ -2,18 +2,128 @@
 
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 
+type Child = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  photoUrl: string | null;
+  category: string | null;
+  jerseyNumber: number | null;
+  teams: { team: { id: string; name: string; primaryColor: string } }[];
+};
+
+function fileToDataUrl(file: File, maxBytes = 400_000): Promise<string> {
+  return new Promise((resolve, reject) => {
+    if (file.size > maxBytes) {
+      reject(new Error("Fotka max. 400 KB"));
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(new Error("Nelze načíst soubor"));
+    reader.readAsDataURL(file);
+  });
+}
+
 export default function ProfilePage() {
-  const { data: session, status } = useSession();
+  const { data: session, status, update } = useSession();
   const router = useRouter();
+  const [greeting, setGreeting] = useState("");
+  const [children, setChildren] = useState<Child[]>([]);
+  const [msg, setMsg] = useState("");
+  const [err, setErr] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [curPass, setCurPass] = useState("");
+  const [newPass, setNewPass] = useState("");
+  const [newPass2, setNewPass2] = useState("");
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login");
   }, [status, router]);
 
-  if (status === "loading") {
+  useEffect(() => {
+    if (status !== "authenticated") return;
+    fetch("/api/profile")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.user) {
+          setGreeting(d.user.greeting || "");
+          setChildren(d.user.players || []);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [status]);
+
+  async function saveGreeting() {
+    setErr("");
+    setMsg("");
+    const res = await fetch("/api/profile", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ greeting }),
+    });
+    const d = await res.json();
+    if (!res.ok) {
+      setErr(d.error || "Chyba");
+      return;
+    }
+    setMsg("Oslovení uloženo");
+    await update({ greeting: d.greeting });
+  }
+
+  async function changePassword(e: React.FormEvent) {
+    e.preventDefault();
+    setErr("");
+    setMsg("");
+    if (newPass !== newPass2) {
+      setErr("Nová hesla se neshodují");
+      return;
+    }
+    const res = await fetch("/api/profile", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ currentPassword: curPass, newPassword: newPass }),
+    });
+    const d = await res.json();
+    if (!res.ok) {
+      setErr(d.error || "Chyba");
+      return;
+    }
+    setMsg("Heslo změněno");
+    setCurPass("");
+    setNewPass("");
+    setNewPass2("");
+  }
+
+  async function uploadPhoto(playerId: string, file: File | null) {
+    if (!file) return;
+    setErr("");
+    setMsg("");
+    try {
+      const dataUrl = await fileToDataUrl(file);
+      const res = await fetch(`/api/players/${playerId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ photoUrl: dataUrl }),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error || "Upload selhal");
+      setChildren((prev) =>
+        prev.map((c) =>
+          c.id === playerId ? { ...c, photoUrl: d.player.photoUrl } : c
+        )
+      );
+      setMsg("Fotka uložena");
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : "Chyba fotky");
+    }
+  }
+
+  if (status === "loading" || loading) {
     return (
       <main className="flex min-h-[50vh] items-center justify-center text-white/50">
         Načítám…
@@ -41,6 +151,17 @@ export default function ProfilePage() {
       <div className="mx-auto max-w-lg space-y-5">
         <h1 className="text-xl font-bold">Profil</h1>
 
+        {msg && (
+          <div className="rounded-xl bg-emerald-500/10 px-4 py-2.5 text-sm text-emerald-300">
+            {msg}
+          </div>
+        )}
+        {err && (
+          <div className="rounded-xl bg-red-500/10 px-4 py-2.5 text-sm text-red-300">
+            {err}
+          </div>
+        )}
+
         <div className="rounded-2xl border border-white/10 bg-[#0d1b2e] p-5">
           <div className="flex items-center gap-4">
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-sky-600/30 text-xl font-bold text-sky-300">
@@ -58,31 +179,135 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        <div className="space-y-2">
+        {/* Oslovení */}
+        <section className="space-y-2">
           <p className="px-0.5 text-[11px] font-semibold uppercase tracking-wider text-white/40">
-            Nastavení
+            Oslovení na Domů
           </p>
-          <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#0d1b2e]">
-            <div className="border-b border-white/5 px-4 py-3.5 text-sm text-white/50">
-              Oslovení a jméno – brzy (editace profilu)
-            </div>
-            <div className="border-b border-white/5 px-4 py-3.5 text-sm text-white/50">
-              Notifikace – brzy
-            </div>
-            <div className="px-4 py-3.5 text-sm text-white/50">
-              Změna hesla – brzy
+          <div className="rounded-2xl border border-white/10 bg-[#0d1b2e] p-4">
+            <p className="mb-2 text-xs text-white/40">
+              Zobrazí se jako „Ahoj, … 👋“ (např. Petře)
+            </p>
+            <div className="flex gap-2">
+              <input
+                value={greeting}
+                onChange={(e) => setGreeting(e.target.value)}
+                placeholder={user?.firstName || "Petře"}
+                maxLength={40}
+                className="flex-1 rounded-xl border border-white/15 bg-white/5 px-3 py-2.5 text-sm text-white outline-none placeholder:text-white/30"
+              />
+              <button
+                type="button"
+                onClick={saveGreeting}
+                className="rounded-xl bg-sky-600 px-4 py-2.5 text-sm font-semibold hover:bg-sky-500"
+              >
+                Uložit
+              </button>
             </div>
           </div>
-        </div>
+        </section>
 
-        {(user?.role === "ADMIN" || user?.role === "ORGANIZER") && (
-          <Link
-            href="/dashboard/score"
-            className="block rounded-2xl border border-white/10 bg-white/5 px-4 py-3.5 text-sm font-medium"
-          >
-            Zápis zápasu →
-          </Link>
+        {/* Fotky dětí */}
+        {children.length > 0 && (
+          <section className="space-y-2">
+            <p className="px-0.5 text-[11px] font-semibold uppercase tracking-wider text-white/40">
+              Fotky dětí
+            </p>
+            <div className="space-y-3">
+              {children.map((c) => (
+                <div
+                  key={c.id}
+                  className="flex items-center gap-3 rounded-2xl border border-white/10 bg-[#0d1b2e] p-3"
+                >
+                  {c.photoUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={c.photoUrl}
+                      alt=""
+                      className="h-14 w-14 rounded-xl object-cover"
+                    />
+                  ) : (
+                    <div
+                      className="flex h-14 w-14 items-center justify-center rounded-xl text-sm font-bold"
+                      style={{
+                        backgroundColor:
+                          c.teams[0]?.team.primaryColor || "#1e3a5f",
+                      }}
+                    >
+                      {c.firstName[0]}
+                      {c.lastName[0]}
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium">
+                      {c.firstName} {c.lastName}
+                    </p>
+                    <p className="text-xs text-white/40">
+                      {[c.category, c.teams[0]?.team.name]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </p>
+                  </div>
+                  <label className="cursor-pointer rounded-lg border border-white/15 px-3 py-1.5 text-xs text-white/70 hover:bg-white/5">
+                    {c.photoUrl ? "Změnit" : "Nahrát"}
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp"
+                      className="hidden"
+                      onChange={(e) =>
+                        uploadPhoto(c.id, e.target.files?.[0] || null)
+                      }
+                    />
+                  </label>
+                </div>
+              ))}
+            </div>
+          </section>
         )}
+
+        {/* Změna hesla */}
+        <section className="space-y-2">
+          <p className="px-0.5 text-[11px] font-semibold uppercase tracking-wider text-white/40">
+            Změna hesla
+          </p>
+          <form
+            onSubmit={changePassword}
+            className="space-y-2 rounded-2xl border border-white/10 bg-[#0d1b2e] p-4"
+          >
+            <input
+              type="password"
+              value={curPass}
+              onChange={(e) => setCurPass(e.target.value)}
+              placeholder="Současné heslo"
+              required
+              className="w-full rounded-xl border border-white/15 bg-white/5 px-3 py-2.5 text-sm text-white outline-none placeholder:text-white/30"
+            />
+            <input
+              type="password"
+              value={newPass}
+              onChange={(e) => setNewPass(e.target.value)}
+              placeholder="Nové heslo (min. 6 znaků)"
+              required
+              minLength={6}
+              className="w-full rounded-xl border border-white/15 bg-white/5 px-3 py-2.5 text-sm text-white outline-none placeholder:text-white/30"
+            />
+            <input
+              type="password"
+              value={newPass2}
+              onChange={(e) => setNewPass2(e.target.value)}
+              placeholder="Nové heslo znovu"
+              required
+              minLength={6}
+              className="w-full rounded-xl border border-white/15 bg-white/5 px-3 py-2.5 text-sm text-white outline-none placeholder:text-white/30"
+            />
+            <button
+              type="submit"
+              className="w-full rounded-xl bg-white/10 py-2.5 text-sm font-semibold hover:bg-white/15"
+            >
+              Změnit heslo
+            </button>
+          </form>
+        </section>
 
         {user?.role === "ADMIN" && (
           <Link

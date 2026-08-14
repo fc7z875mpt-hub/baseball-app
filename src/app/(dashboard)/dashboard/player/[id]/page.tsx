@@ -23,6 +23,7 @@ type PlayerDetail = {
       name: string;
       shortName: string | null;
       primaryColor: string;
+      logoUrl?: string | null;
     };
     season: { name: string; year: number } | null;
   }[];
@@ -40,8 +41,25 @@ type RecentGame = {
   result: string;
 };
 
+type Sibling = { id: string; firstName: string; lastName: string };
+
+type CompareData = {
+  scope: string;
+  me: { hits: number; runs: number; homeRuns: number; games: number; avg: number | null };
+  teamAverage: { hits: number; runs: number; homeRuns: number; games: number; avg: number };
+  best: {
+    name: string;
+    hits: number;
+    runs: number;
+    homeRuns: number;
+    games: number;
+    avg: number | null;
+  } | null;
+  peerCount: number;
+};
+
 export default function PlayerProfilePage() {
-  const { status } = useSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
   const params = useParams();
   const id = params.id as string;
@@ -49,6 +67,11 @@ export default function PlayerProfilePage() {
   const [player, setPlayer] = useState<PlayerDetail | null>(null);
   const [stats, setStats] = useState<AggregatedStats | null>(null);
   const [recent, setRecent] = useState<RecentGame[]>([]);
+  const [canCompare, setCanCompare] = useState(false);
+  const [siblings, setSiblings] = useState<Sibling[]>([]);
+  const [compare, setCompare] = useState<CompareData | null>(null);
+  const [compareScope, setCompareScope] = useState<"team" | "category">("team");
+  const [showCompare, setShowCompare] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
 
@@ -59,21 +82,50 @@ export default function PlayerProfilePage() {
   useEffect(() => {
     if (status !== "authenticated" || !id) return;
     setLoading(true);
-    fetch(`/api/players/${id}`)
-      .then(async (r) => {
+    setShowCompare(false);
+    setCompare(null);
+
+    Promise.all([
+      fetch(`/api/players/${id}`).then(async (r) => {
         const d = await r.json();
         if (!r.ok) throw new Error(d.error || "Chyba");
+        return d;
+      }),
+      fetch("/api/players/me")
+        .then((r) => r.json())
+        .then((d) => d.players || [])
+        .catch(() => []),
+    ])
+      .then(([d, kids]) => {
         setPlayer(d.player);
         setStats(d.stats);
         setRecent(d.recentGames || []);
+        setCanCompare(!!d.canCompare);
+        setSiblings(
+          (kids as Sibling[]).map((k) => ({
+            id: k.id,
+            firstName: k.firstName,
+            lastName: k.lastName,
+          }))
+        );
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
   }, [status, id]);
 
+  async function loadCompare(scope: "team" | "category") {
+    setCompareScope(scope);
+    const res = await fetch(`/api/players/${id}/compare?scope=${scope}`);
+    const d = await res.json();
+    if (res.ok) {
+      setCompare(d);
+      setShowCompare(true);
+    }
+  }
+
   if (status === "loading" || loading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[#0a1628] text-white/60">
+      <main className="flex min-h-screen items-center justify-center text-white/60">
         Načítám profil…
       </main>
     );
@@ -81,10 +133,10 @@ export default function PlayerProfilePage() {
 
   if (error || !player || !stats) {
     return (
-      <main className="min-h-screen bg-[#0a1628] px-4 py-8 text-white">
+      <main className="px-4 py-8">
         <div className="mx-auto max-w-lg">
-          <Link href="/dashboard" className="text-sm text-red-400 hover:text-red-300">
-            ← Zpět
+          <Link href="/dashboard" className="text-sm text-sky-400">
+            ← Domů
           </Link>
           <p className="mt-6 text-white/60">{error || "Hráč nenalezen"}</p>
         </div>
@@ -103,66 +155,88 @@ export default function PlayerProfilePage() {
     { label: "HR", value: stats.homeRuns, color: "#e11d2e" },
   ];
 
-  const trendPoints = recent.map((g) => ({
-    label: g.opponent.slice(0, 6),
+  const trendPoints = recent.map((g, i) => ({
+    label: `Z${i + 1}`,
     hits: g.hits,
     atBats: g.atBats,
   }));
 
   return (
-    <main className="min-h-screen bg-[#0a1628] px-4 py-6 pb-16 text-white">
+    <main className="px-4 pt-5">
       <div className="mx-auto max-w-lg space-y-5">
-        <div className="flex items-center justify-between">
-          <Link href="/dashboard" className="text-sm text-white/50 hover:text-white">
-            ← Dashboard
-          </Link>
-          {season && <span className="text-xs text-white/40">{season.name}</span>}
-        </div>
+        {/* Přepínač dětí */}
+        {siblings.length > 1 && (
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            {siblings.map((s) => (
+              <Link
+                key={s.id}
+                href={`/dashboard/player/${s.id}`}
+                className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-medium transition ${
+                  s.id === id
+                    ? "bg-sky-600 text-white"
+                    : "bg-white/5 text-white/50 hover:bg-white/10"
+                }`}
+              >
+                {s.firstName}
+              </Link>
+            ))}
+          </div>
+        )}
 
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+        {/* Hlavička hráče */}
+        <div className="rounded-2xl border border-white/10 bg-[#0d1b2e] p-5">
           <div className="flex items-center gap-4">
-            <div
-              className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl text-xl font-black text-white shadow-lg"
-              style={{ backgroundColor: color }}
-            >
-              {player.jerseyNumber != null
-                ? `#${player.jerseyNumber}`
-                : `${player.firstName[0]}${player.lastName[0]}`}
-            </div>
+            {player.photoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={player.photoUrl}
+                alt=""
+                className="h-16 w-16 rounded-2xl object-cover ring-2 ring-white/10"
+              />
+            ) : (
+              <div
+                className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl text-xl font-black text-white shadow-lg"
+                style={{ backgroundColor: color }}
+              >
+                {player.jerseyNumber != null
+                  ? `#${player.jerseyNumber}`
+                  : `${player.firstName[0]}${player.lastName[0]}`}
+              </div>
+            )}
             <div className="min-w-0">
               <h1 className="truncate text-xl font-bold">
                 {player.firstName} {player.lastName}
               </h1>
               <p className="text-sm text-white/55">
-                {[team?.name, player.category, player.birthYear].filter(Boolean).join(" · ")}
+                {[team?.name, player.category, player.birthYear]
+                  .filter(Boolean)
+                  .join(" · ")}
               </p>
-              {player.teams.length > 1 && (
-                <p className="mt-1 text-xs text-white/35">
-                  Také:{" "}
-                  {player.teams
-                    .slice(1)
-                    .map((t) => t.team.shortName || t.team.name)
-                    .join(", ")}
-                </p>
+              {season && (
+                <p className="mt-0.5 text-xs text-white/35">{season.name}</p>
               )}
             </div>
           </div>
         </div>
 
+        {/* Základní karty – klik = vysvětlení */}
         <div>
-          <h2 className="mb-2 px-1 text-xs font-semibold uppercase tracking-wider text-white/40">
-            Sezóna – útok
+          <h2 className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wider text-white/40">
+            Útok · klepni na kartu pro vysvětlení
           </h2>
-          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-            <StatCard label="Zápasy" value={stats.games} />
-            <StatCard label="AVG" value={formatAvg(stats.avg)} accent="red" />
+          <div className="grid grid-cols-4 gap-2">
             <StatCard label="Hity" value={stats.hits} accent="blue" />
-            <StatCard label="HR" value={stats.homeRuns} accent="red" />
             <StatCard label="Doběhy" value={stats.runs} />
-            <StatCard label="RBI" value={stats.rbi} />
-            <StatCard label="BB" value={stats.walks} />
-            <StatCard label="SO" value={stats.strikeouts} />
+            <StatCard label="HR" value={stats.homeRuns} accent="red" />
+            <StatCard label="Zápasy" value={stats.games} />
           </div>
+        </div>
+
+        <div className="grid grid-cols-4 gap-2">
+          <StatCard label="AVG" value={formatAvg(stats.avg)} accent="red" />
+          <StatCard label="RBI" value={stats.rbi} />
+          <StatCard label="BB" value={stats.walks} />
+          <StatCard label="SO" value={stats.strikeouts} />
         </div>
 
         {stats.games > 0 && (
@@ -174,7 +248,7 @@ export default function PlayerProfilePage() {
         )}
 
         <div>
-          <h2 className="mb-2 px-1 text-xs font-semibold uppercase tracking-wider text-white/40">
+          <h2 className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wider text-white/40">
             Práce v poli
           </h2>
           <div className="grid grid-cols-3 gap-2">
@@ -186,13 +260,100 @@ export default function PlayerProfilePage() {
 
         {stats.hits > 0 && <BarChart items={hitBreakdown} title="Složení hitů" />}
 
-        {trendPoints.length > 0 && (
-          <TrendChart points={trendPoints} title="Hity po zápasech" />
+        {trendPoints.length > 0 && <TrendChart points={trendPoints} />}
+
+        {/* Porovnat – jen s oprávněním */}
+        {canCompare && stats.games > 0 && (
+          <section className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h2 className="px-1 text-[11px] font-semibold uppercase tracking-wider text-white/40">
+                Porovnat
+              </h2>
+              <div className="flex gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => loadCompare("team")}
+                  className={`rounded-full px-3 py-1 text-[11px] font-medium ${
+                    showCompare && compareScope === "team"
+                      ? "bg-sky-600 text-white"
+                      : "bg-white/10 text-white/60"
+                  }`}
+                >
+                  Tým
+                </button>
+                <button
+                  type="button"
+                  onClick={() => loadCompare("category")}
+                  className={`rounded-full px-3 py-1 text-[11px] font-medium ${
+                    showCompare && compareScope === "category"
+                      ? "bg-sky-600 text-white"
+                      : "bg-white/10 text-white/60"
+                  }`}
+                >
+                  Kategorie
+                </button>
+              </div>
+            </div>
+
+            {showCompare && compare && (
+              <div className="space-y-2 rounded-2xl border border-purple-500/20 bg-purple-500/5 p-4">
+                <p className="text-xs text-white/45">
+                  {compareScope === "team" ? "V rámci týmu" : "V kategorii"}
+                  {compare.peerCount > 0
+                    ? ` · ${compare.peerCount} spoluhráčů`
+                    : " · zatím málo dat"}
+                </p>
+                <CompareRow
+                  label="Hity"
+                  me={compare.me.hits}
+                  avg={compare.teamAverage.hits}
+                  best={compare.best?.hits}
+                  bestName={compare.best?.name}
+                />
+                <CompareRow
+                  label="Doběhy"
+                  me={compare.me.runs}
+                  avg={compare.teamAverage.runs}
+                  best={compare.best?.runs}
+                  bestName={compare.best?.name}
+                />
+                <CompareRow
+                  label="HR"
+                  me={compare.me.homeRuns}
+                  avg={compare.teamAverage.homeRuns}
+                  best={compare.best?.homeRuns}
+                  bestName={compare.best?.name}
+                />
+                <div className="flex gap-3 pt-1 text-[10px] text-white/40">
+                  <span className="flex items-center gap-1">
+                    <span className="h-2 w-2 rounded-full bg-sky-400" /> Ty
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="h-2 w-2 rounded-full bg-white/40" /> Průměr
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="h-2 w-2 rounded-full bg-amber-400" /> Nejlepší
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {!showCompare && (
+              <button
+                type="button"
+                onClick={() => loadCompare("team")}
+                className="w-full rounded-2xl border border-purple-500/25 bg-purple-500/10 py-3 text-sm font-semibold text-purple-200 hover:bg-purple-500/15"
+              >
+                Porovnat výkon →
+              </button>
+            )}
+          </section>
         )}
 
+        {/* Poslední zápasy */}
         {recent.length > 0 && (
           <div>
-            <h2 className="mb-2 px-1 text-xs font-semibold uppercase tracking-wider text-white/40">
+            <h2 className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wider text-white/40">
               Poslední zápasy
             </h2>
             <div className="space-y-2">
@@ -211,7 +372,7 @@ export default function PlayerProfilePage() {
                 return (
                   <div
                     key={g.matchId}
-                    className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-3 py-2.5"
+                    className="flex items-center justify-between rounded-xl border border-white/10 bg-[#0d1b2e] px-3 py-2.5"
                   >
                     <div>
                       <p className="text-sm font-medium">vs {g.opponent}</p>
@@ -235,13 +396,61 @@ export default function PlayerProfilePage() {
         {stats.games === 0 && (
           <div className="rounded-2xl border border-dashed border-white/15 p-6 text-center text-sm text-white/45">
             Zatím žádné statistiky ze zápasů.
-            <br />
-            <span className="text-white/30">
-              Admin může načíst demo data v admin panelu.
-            </span>
           </div>
         )}
       </div>
     </main>
+  );
+}
+
+function CompareRow({
+  label,
+  me,
+  avg,
+  best,
+  bestName,
+}: {
+  label: string;
+  me: number;
+  avg: number;
+  best?: number;
+  bestName?: string;
+}) {
+  const max = Math.max(me, avg, best ?? 0, 1);
+  return (
+    <div>
+      <div className="mb-1 flex justify-between text-xs">
+        <span className="text-white/60">{label}</span>
+        <span className="tabular-nums text-white/80">
+          <span className="text-sky-400">{me}</span>
+          <span className="text-white/30"> / </span>
+          <span className="text-white/50">{avg}</span>
+          {best != null && (
+            <>
+              <span className="text-white/30"> / </span>
+              <span className="text-amber-400" title={bestName}>
+                {best}
+              </span>
+            </>
+          )}
+        </span>
+      </div>
+      <div className="relative h-2 overflow-hidden rounded-full bg-white/5">
+        <div
+          className="absolute left-0 top-0 h-full rounded-full bg-white/20"
+          style={{ width: `${(avg / max) * 100}%` }}
+        />
+        {best != null && (
+          <div
+            className="absolute left-0 top-0 h-full rounded-full bg-amber-400/40"
+            style={{ width: `${(best / max) * 100}%` }}
+          />
+        )}
+        <div
+          className="absolute left-0 top-0 h-full rounded-full bg-sky-400"
+          style={{ width: `${(me / max) * 100}%` }}
+        />
+      </div>
+    </div>
   );
 }
