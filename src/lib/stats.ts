@@ -39,6 +39,8 @@ export type AggregatedStats = {
   ops: number | null;
 };
 
+type Acc = Omit<AggregatedStats, "avg" | "obp" | "slg" | "ops">;
+
 export function aggregateStats(rows: MatchStatRow[]): AggregatedStats {
   const empty: AggregatedStats = {
     games: 0,
@@ -64,42 +66,41 @@ export function aggregateStats(rows: MatchStatRow[]): AggregatedStats {
 
   if (!rows.length) return empty;
 
-  const s = rows.reduce(
-    (acc, r) => ({
-      games: acc.games + 1,
-      atBats: acc.atBats + r.atBats,
-      hits: acc.hits + r.hits,
-      singles: acc.singles + r.singles,
-      doubles: acc.doubles + r.doubles,
-      triples: acc.triples + r.triples,
-      homeRuns: acc.homeRuns + r.homeRuns,
-      runs: acc.runs + r.runs,
-      rbi: acc.rbi + r.rbi,
-      walks: acc.walks + r.walks,
-      strikeouts: acc.strikeouts + r.strikeouts,
-      errors: acc.errors + r.errors,
-      putouts: acc.putouts + r.putouts,
-      assists: acc.assists + r.assists,
-      inningsInField: acc.inningsInField + r.inningsInField,
-    }),
-    {
-      games: 0,
-      atBats: 0,
-      hits: 0,
-      singles: 0,
-      doubles: 0,
-      triples: 0,
-      homeRuns: 0,
-      runs: 0,
-      rbi: 0,
-      walks: 0,
-      strikeouts: 0,
-      errors: 0,
-      putouts: 0,
-      assists: 0,
-      inningsInField: 0,
-    }
-  );
+  const initial: Acc = {
+    games: 0,
+    atBats: 0,
+    hits: 0,
+    singles: 0,
+    doubles: 0,
+    triples: 0,
+    homeRuns: 0,
+    runs: 0,
+    rbi: 0,
+    walks: 0,
+    strikeouts: 0,
+    errors: 0,
+    putouts: 0,
+    assists: 0,
+    inningsInField: 0,
+  };
+
+  const s = rows.reduce<Acc>((acc, r) => ({
+    games: acc.games + 1,
+    atBats: acc.atBats + r.atBats,
+    hits: acc.hits + r.hits,
+    singles: acc.singles + r.singles,
+    doubles: acc.doubles + r.doubles,
+    triples: acc.triples + r.triples,
+    homeRuns: acc.homeRuns + r.homeRuns,
+    runs: acc.runs + r.runs,
+    rbi: acc.rbi + r.rbi,
+    walks: acc.walks + r.walks,
+    strikeouts: acc.strikeouts + r.strikeouts,
+    errors: acc.errors + r.errors,
+    putouts: acc.putouts + r.putouts,
+    assists: acc.assists + r.assists,
+    inningsInField: acc.inningsInField + r.inningsInField,
+  }), initial);
 
   const avg = s.atBats > 0 ? s.hits / s.atBats : null;
   const plateAppearances = s.atBats + s.walks;
