@@ -113,18 +113,12 @@ export default function PlayerProfilePage() {
     <main className="min-h-screen bg-[#0a1628] px-4 py-6 pb-16 text-white">
       <div className="mx-auto max-w-lg space-y-5">
         <div className="flex items-center justify-between">
-          <Link
-            href="/dashboard"
-            className="text-sm text-white/50 hover:text-white"
-          >
+          <Link href="/dashboard" className="text-sm text-white/50 hover:text-white">
             ← Dashboard
           </Link>
-          {season && (
-            <span className="text-xs text-white/40">{season.name}</span>
-          )}
+          {season && <span className="text-xs text-white/40">{season.name}</span>}
         </div>
 
-        {/* Profilová hlavička */}
         <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
           <div className="flex items-center gap-4">
             <div
@@ -140,9 +134,7 @@ export default function PlayerProfilePage() {
                 {player.firstName} {player.lastName}
               </h1>
               <p className="text-sm text-white/55">
-                {[team?.name, player.category, player.birthYear]
-                  .filter(Boolean)
-                  .join(" · ")}
+                {[team?.name, player.category, player.birthYear].filter(Boolean).join(" · ")}
               </p>
               {player.teams.length > 1 && (
                 <p className="mt-1 text-xs text-white/35">
@@ -157,7 +149,6 @@ export default function PlayerProfilePage() {
           </div>
         </div>
 
-        {/* Klíčové statistiky */}
         <div>
           <h2 className="mb-2 px-1 text-xs font-semibold uppercase tracking-wider text-white/40">
             Sezóna – útok
@@ -182,7 +173,6 @@ export default function PlayerProfilePage() {
           </div>
         )}
 
-        {/* Pole */}
         <div>
           <h2 className="mb-2 px-1 text-xs font-semibold uppercase tracking-wider text-white/40">
             Práce v poli
@@ -194,48 +184,50 @@ export default function PlayerProfilePage() {
           </div>
         </div>
 
-        {/* Grafy */}
-        {stats.hits > 0 && (
-          <BarChart items={hitBreakdown} title="Složení hitů" />
-        )}
+        {stats.hits > 0 && <BarChart items={hitBreakdown} title="Složení hitů" />}
 
         {trendPoints.length > 0 && (
           <TrendChart points={trendPoints} title="Hity po zápasech" />
         )}
 
-        {/* Poslední zápasy */}
         {recent.length > 0 && (
           <div>
             <h2 className="mb-2 px-1 text-xs font-semibold uppercase tracking-wider text-white/40">
               Poslední zápasy
             </h2>
             <div className="space-y-2">
-              {[...recent].reverse().map((g) => (
-                <div
-                  key={g.matchId}
-                  className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-3 py-2.5"
-                >
-                  <div>
-                    <p className="text-sm font-medium">vs {g.opponent}</p>
-                    <p className="text-xs text-white/40">
-                      {new Date(g.date).toLocaleDateString("cs-CZ", {
-                        day: "numeric",
-                        month: "short",
-                      }){" "}
-                      · {g.result}
-                    </p>
+              {[...recent].reverse().map((g) => {
+                const dateLabel = new Date(g.date).toLocaleDateString("cs-CZ", {
+                  day: "numeric",
+                  month: "short",
+                });
+                const detail = [
+                  `${g.runs} R`,
+                  g.homeRuns > 0 ? `${g.homeRuns} HR` : null,
+                  g.errors > 0 ? `${g.errors} E` : null,
+                ]
+                  .filter(Boolean)
+                  .join(" · ");
+                return (
+                  <div
+                    key={g.matchId}
+                    className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-3 py-2.5"
+                  >
+                    <div>
+                      <p className="text-sm font-medium">vs {g.opponent}</p>
+                      <p className="text-xs text-white/40">
+                        {dateLabel} · {g.result}
+                      </p>
+                    </div>
+                    <div className="text-right text-sm tabular-nums">
+                      <p className="font-semibold">
+                        {g.hits}/{g.atBats}
+                      </p>
+                      <p className="text-xs text-white/40">{detail}</p>
+                    </div>
                   </div>
-                  <div className="text-right text-sm tabular-nums">
-                    <p className="font-semibold">
-                      {g.hits}/{g.atBats}
-                    </p>
-                    <p className="text-xs text-white/40">
-                      {g.runs} R{g.homeRuns > 0 ? ` · ${g.homeRuns} HR` : ""}
-                      {g.errors > 0 ? ` · ${g.errors} E` : ""}
-                    </p>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
